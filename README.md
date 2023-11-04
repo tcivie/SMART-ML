@@ -1,5 +1,5 @@
 # Self-Learning Machine Learning Algorithm for Responsive Traffic Lights (SMART Lights) - A Literature Review
-
+![Project Logo](https://github.com/tcivie/SMART-ML/blob/main/DALL·E%202023-11-04%2012.18.58%20-%20Design%20a%20sleek%20and%20modern%20logo%20for%20an%20academic%20AI%20project%20named%20'SMART'%2C%20which%20focuses%20on%20smart%20traffic%20light%20systems.%20The%20logo%20should%20incorporate%20ele.png)
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-supported-orange.svg)
 ![Colab](https://img.shields.io/badge/Colab-compatible-9cf.svg)
