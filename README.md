@@ -1,5 +1,5 @@
 # Self-Learning Machine Learning Algorithm for Responsive Traffic Lights (SMART Lights) - A Literature Review
-![Project Logo](path/to/logo.png)
+
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-supported-orange.svg)
 ![Colab](https://img.shields.io/badge/Colab-compatible-9cf.svg)
