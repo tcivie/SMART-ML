@@ -1,5 +1,7 @@
+import math
 import os
 import sys
+
 import traci
 
 # Check for the SUMO_HOME environment variable
@@ -15,9 +17,51 @@ sumoCmd = [
     "-c", r"C:\Users\omera\Desktop\College\Year 4\Final Project\Cloned\scenarios\bologna\acosta\run.sumocfg"
 ]
 
+
+class Lane:
+    def __init__(self, lid):
+        self._id = lid
+        self._shape = traci.lane.getShape(lid)
+
+    def get_min_distance_points(self, other):
+        min_distance = math.inf
+        point1 = self._shape[0]
+        point2 = other._shape[0]
+
+        for my_point in self._shape:
+            for other_point in other._shape:
+                distance = math.dist(my_point, other_point)
+                if distance < min_distance:
+                    min_distance = distance
+                    point1 = my_point
+                    point2 = other_point
+
+        return min_distance, point1, point2
+
+    def __str__(self):
+        return 'Lane: {}'.format(self._id)
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class TrafficLight:
+    def __init__(self, tid):
+        self._id = tid
+        self._lanes = [Lane(i) for i in traci.trafficlight.getControlledLanes(tid)]
+        self._links = traci.trafficlight.getControlledLinks(tid)
+
+    def __str__(self):
+        return 'TrafficLight: {}'.format(self._id)
+
+    def __repr__(self):
+        return self.__str__()
+
+
 # Start TraCI with the SUMO command
 traci.start(sumoCmd)
 traffic_light_ids = traci.trafficlight.getIDList()
+light1 = TrafficLight(traffic_light_ids[0])
 
 # Iterate through traffic lights and get legal phases
 for tl_id in traffic_light_ids:
