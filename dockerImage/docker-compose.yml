@@ -1,0 +1,9 @@
+version: '3'
+services:
+  sumo-simulation:
+    build: .
+    volumes:
+      - ../scenarios/bologna/acosta:/sumo-data
+    environment:
+      - PORT=8080
+      - SUMO_CONF_FILE=/sumo-data/run.sumocfg

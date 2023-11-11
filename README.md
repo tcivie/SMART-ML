@@ -25,6 +25,17 @@ The primary objectives of this study are to:
 Additionally, we aim to assess the efficacy of integrating Multi-Agent systems and the adaptability of the model through Transfer Learning techniques.
 
 ---
+## 💽 How to Use
+### 📦 Running docker container
+To run the Simulation inside the container, run the following command:
+```bash
+docker-compose -f dockerImage/docker-compose.yml up
+```
+To update the container, run the following command:
+```bash
+docker-compose -f dockerImage/docker-compose.yml up --build
+```
+---
 
 ## 📚 Background
 
