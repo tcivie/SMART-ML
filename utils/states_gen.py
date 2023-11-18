@@ -1,5 +1,6 @@
 import math
 import os
+import random
 import sys
 
 import sumolib
@@ -18,7 +19,8 @@ sumoCmd = [
 ]
 
 net = sumolib.net.readNet(
-    r'C:\Users\omera\Desktop\College\Year 4\Final Project\Cloned\scenarios\bologna\acosta\acosta_buslanes.net.xml')
+    r'C:\Users\omera\Desktop\College\Year 4\Final Project\Cloned\scenarios\bologna\acosta\acosta_buslanes.net.xml',
+    withPrograms=True)
 
 
 class Lane:
@@ -72,8 +74,9 @@ class Link:
 
 
 class TrafficLight:
-    def __init__(self, tls_obj):
+    def __init__(self, tls_obj: sumolib.net.TLS):
         self._obj = tls_obj
+        self._edges = self._obj.getEdges()
         self._connections = [Link(c) for c in self._obj.getConnections()]
 
     @property
@@ -102,7 +105,7 @@ def do_segments_intersect(link1: Link, link2: Link):
             min(bound1[1], bound2[1]) <= point[1] <= max(bound1[1], bound2[1])
 
     intersection = ccw(p1, p3, p4) != ccw(p2, p3, p4) and ccw(p1, p2, p3) != ccw(p1, p2, p4)
-
+    return intersection
     if intersection:
         # Check if the intersection occurs within the bounding rectangle
         for point in [p1, p2, p3, p4]:
@@ -112,22 +115,41 @@ def do_segments_intersect(link1: Link, link2: Link):
 
 
 traffic_lights = net.getTrafficLights()
+for tl in traffic_lights:
+    programs = tl.getPrograms()
+    for program in programs.values():
+        phases = program.getPhases()
+        print(phases)
 tls1 = TrafficLight(traffic_lights[4])
 print(tls1)
 line_segments = set()
-for l1 in tls1.connections:
-    for l2 in tls1.connections:
-        if l1 != l2:
-            res = do_segments_intersect(l1, l2)
-            print(f"{l1} and {l2} do", "" if res else "not", "intersects")
-            if not res:
-                line_segments.add(l1.get_line_points())
-                line_segments.add(l2.get_line_points())
+random_connection = random.choice(tls1.connections)
+# random_connection = tls1.connections[15]
+rnd_points = random_connection.get_line_points()
+do_intersect = set()
+do_not_intersect = set()
+print('Random connection:', random_connection)
+for con in tls1.connections:
+    if con == random_connection:
+        continue
+    res = do_segments_intersect(con, random_connection)
+    if res:
+        print(f"{random_connection} and {con} do intersects")
+        do_intersect.add(con.get_line_points())
+    else:
+        print(f"{random_connection} and {con} do not intersects")
+        do_not_intersect.add(con.get_line_points())
 
-line_segments = list(line_segments)
+line_segments = list(do_intersect) + list(do_not_intersect)
+line_segments.append(rnd_points)
 # line_segments = line_segments[:4]
 
-line_segments = [(f'{i + 1000}', 'blue', [*line_segments[i]]) for i in range(len(line_segments))]
+line_segments = [
+    (
+        f'{i + 1000}',
+        'blue' if line_segments[i] == rnd_points else 'red' if line_segments[i] in do_intersect else 'green',
+        [*line_segments[i]]) for
+    i in range(len(line_segments))]
 import xml.etree.ElementTree as ET
 
 
