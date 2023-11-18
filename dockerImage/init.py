@@ -1,22 +1,27 @@
 import os
-from typing import Union, Tuple, Any, List
+from typing import Union, Tuple, Any, List, Dict
 
 import traci
 from pathlib import Path
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import threading
 import uuid
 import socket
+import subprocess
 
 app = Flask(__name__)
+app.debug = True
 
 # Dictionary to keep track of simulations
 simulations = {}
 
 
 def start_sumo(config_path: str, port: int) -> None:
-    sumoCmd = ['sumo', '-c', config_path, '--remote-port', str(port)]
-    traci.start(sumoCmd)
+    print(f"Starting SUMO with config {config_path} on port {port}")
+    sumo_args = ['sumo', '-c', config_path, '--remote-port', str(port)]
+    subprocess.run(sumo_args)
+
+
 
 
 def find_available_port() -> int:
@@ -27,9 +32,10 @@ def find_available_port() -> int:
     return port
 
 
-@app.route('/start', methods=['GET'])
+@app.route('/start', methods=['POST'])
 def start_simulation():
-    config_path = request.args.get('config')
+    request_data = request.get_json()
+    config_path = request_data.get('config_path')
     if not config_path:
         return "No config path provided", 400
 
@@ -49,16 +55,64 @@ def start_simulation():
     })
 
 
+@app.route('/stop', methods=['POST'])
+def stop_simulation(id: str) -> Union[tuple[str, int], Response]:
+    session_id = request.args.get('sessionId')
+    if not session_id:
+        return "No session ID provided", 400
+
+    if session_id not in simulations:
+        return "Session ID not found", 404
+
+    port = simulations[session_id]['port']
+    traci.init(port=port)
+    traci.close()
+    simulations.pop(session_id)
+
+    return jsonify({
+        'status': 'success'
+    })
+
+
 @app.route('/traffic_lights', methods=['GET'])
-def get_traffic_lights(session_id: str) -> Union[tuple[str, int], tuple[List, int]]:
+def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
+    session_id = request.args.get('session_id')
     if not session_id:
         return "No session ID provided", 400
 
     port = simulations[session_id]['port']
-    traci.init(port=port)
-    traffic_light_ids = traci.trafficlight.getIDList()
-    traci.close()
-    return traffic_light_ids, 200
+    connection = traci.connect(port=port)
+
+    if connection is None:
+        return "Session ID not found", 404
+
+    traffic_lights = connection.trafficlight.getIDList()
+    returned_traffic_lights = []
+    for traffic_light in traffic_lights:
+        logics = []
+        for logic in list(connection.trafficlight.getAllProgramLogics(traffic_light)):
+            logics.append({
+                'program_id': logic.programID,
+                'type': logic.type,
+                'currentPhaseIndex': logic.currentPhaseIndex,
+                'phases': [{
+                    'duration': phase.duration,
+                    'minDur': phase.minDur,
+                    'maxDur': phase.maxDur,
+                    'state': phase.state
+                } for phase in logic.phases]
+            })
+        returned_traffic_lights.append({
+            'id': traffic_light,
+            'current_phase': connection.trafficlight.getPhase(traffic_light),
+            'current_phase_duration': connection.trafficlight.getNextSwitch(traffic_light) - connection.simulation.getTime(),
+            'current_phase_duration_max': connection.trafficlight.getPhaseDuration(traffic_light),
+            'program': connection.trafficlight.getProgram(traffic_light),
+            'logics': logics
+        })
+
+    connection.close()
+    return returned_traffic_lights
 
 
 @app.route('/set_traffic_light_phase', methods=['POST'])
@@ -86,5 +140,13 @@ def set_traffic_light_phase():
     })
 
 
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy'
+    })
+
+
 if __name__ == "__main__":
-    app.run(port=5000)
+    PORT = os.environ.get('PORT', 8080)
+    app.run(port=PORT, host='0.0.0.0')

@@ -8,8 +8,10 @@ RUN apt-get update && \
     apt-get install -y sumo sumo-tools sumo-doc \
     python3 python3-pip
 
+COPY requirements.txt /app/requirements.txt
+
 # Install TraCI for Python
-RUN pip3 install -r ../requirements.txt
+RUN pip3 install -r /app/requirements.txt
 
 # Set the SUMO_HOME environment variable
 # Replace '/usr/share/sumo' with the actual SUMO installation path if different
@@ -22,8 +24,11 @@ WORKDIR /app
 # Copy your Python script into the Docker image
 COPY init.py /app/init.py
 
+# Copy all sumo files into the Docker image
+COPY scenarios /app/scenarios
+
 # Expose a port if you need to access the SUMO environment from outside the container
-EXPOSE ${PORT}
+EXPOSE $PORT
 
 # Run your TraCI script (replace 'your_traci_script.py' with your actual script name)
 CMD ["python3", "init.py"]
