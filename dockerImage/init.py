@@ -44,7 +44,6 @@ def start_simulation():
 
     thread = threading.Thread(target=start_sumo, args=(config_path, port))
     thread.start()
-
     simulations[session_id] = {
         'thread': thread,
         'port': port
@@ -116,7 +115,7 @@ def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
 
 
 @app.route('/set_traffic_light_phase', methods=['POST'])
-def set_traffic_light_phase():
+def set_traffic_light_phase(session_id: str, phase:int):
     session_id = request.args.get('sessionId')
     if not session_id:
         return "No session ID provided", 400
@@ -131,9 +130,8 @@ def set_traffic_light_phase():
     phase = request.args.get('phase')
     if not phase:
         return "No phase provided", 400
-
     traci.trafficlight.setPhase(traffic_light_id, int(phase))
-    traci.close()
+    # traci.close()
 
     return jsonify({
         'status': 'success'
