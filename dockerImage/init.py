@@ -88,24 +88,3 @@ def set_traffic_light_phase():
 
 if __name__ == "__main__":
     app.run(port=5000)
-
-# # Retrieve the SUMO configuration file name from the environment variable
-# sumo_conf_file = os.getenv('SUMO_CONF_FILE', 'run.sumocfg')
-#
-# # Construct the full path to the configuration file in /sumo-data directory
-# config_path = Path('/sumo-data') / sumo_conf_file
-#
-# # The command to start SUMO, using the full path to the configuration file
-# sumoCmd = ["sumo", "-c", str(config_path)]
-#
-# # Start SUMO with TraCI
-# print("Starting SUMO with TraCI...")
-# traci.start(sumoCmd, port=8080)
-# print("SUMO started.")
-#
-# while traci.simulation.getMinExpectedNumber() > 0:
-#     traci.simulationStep()
-#
-# # Close the TraCI connection
-# traci.close()
-# print("TraCI connection closed.")

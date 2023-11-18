@@ -9,7 +9,7 @@ RUN apt-get update && \
     python3 python3-pip
 
 # Install TraCI for Python
-RUN pip3 install traci
+RUN pip3 install -r ../requirements.txt
 
 # Set the SUMO_HOME environment variable
 # Replace '/usr/share/sumo' with the actual SUMO installation path if different
