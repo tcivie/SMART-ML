@@ -1,6 +1,5 @@
 import os
 import socket
-import subprocess
 import uuid
 from typing import Union, Any
 
@@ -59,16 +58,19 @@ def start_simulation():
 
 @app.route('/stop', methods=['POST'])
 def stop_simulation() -> Union[tuple[str, int], Response]:
-    session_id = request.args.get('sessionId')
+    request_data = request.get_json()
+    session_id = request_data.get('session_id')
     if not session_id:
         return "No session ID provided", 400
 
     if session_id not in simulations:
         return "Session ID not found", 404
 
-    port = simulations[session_id]['port']
-    traci.init(port=port)
-    traci.close()
+    session = simulations.get(session_id)
+    if not session:
+        return "Session ID not found", 404
+    conn = session["conn"]
+    conn.close()
     simulations.pop(session_id)
 
     return jsonify({
