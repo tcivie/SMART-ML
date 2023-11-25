@@ -41,6 +41,10 @@ def find_available_port() -> int:
 
 @app.route('/start', methods=['POST'])
 def start_simulation():
+    """
+    Start the simulation
+    :return: JSON response
+    """
     global simulations
     request_data = request.get_json()
     config_path = request_data.get('config_path')
@@ -69,6 +73,10 @@ def start_simulation():
 
 @app.route('/stop', methods=['POST'])
 def stop_simulation() -> Union[tuple[str, int], Response]:
+    """
+    Stop the simulation
+    :return: JSON response
+    """
     global simulations
     request_data = request.get_json()
     session_id = request_data.get('session_id')
@@ -89,6 +97,10 @@ def stop_simulation() -> Union[tuple[str, int], Response]:
 
 @app.route('/traffic_lights', methods=['GET'])
 def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
+    """
+    Get the traffic lights of the simulation
+    :return: JSON response
+    """
     session_id = request.args.get('session_id')
     if not session_id:
         return "No session ID provided", 400
@@ -137,6 +149,11 @@ def get_traffic_ligts_data(connection: traci.connection.Connection):
 
 @app.route('/traffic_lights/<tls_id>/phase', methods=['POST'])
 def set_next_phase(tls_id: str) -> Union[tuple[str, int], Response]:
+    """
+    Set the next phase of a traffic light
+    :param tls_id: ID of the traffic light
+    :return: JSON response
+    """
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     if not session_id:
@@ -208,6 +225,11 @@ def calculate_all_possible_transitions(current_phase_state):
 
 @app.route('/traffic_lights/<tls_id>/switch_program', methods=['POST'])
 def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
+    """
+    Switch the program of a traffic light
+    :param tls_id: ID of the traffic light
+    :return: JSON response
+    """
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     new_program_id = request_data.get('program_id')
@@ -238,7 +260,7 @@ def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
     # Find the next possible legal phase in the new program
     # Assuming that the string length of the phases is the same both of the programs
     # Possible transitions are:
-    # green -> yellow -> red -> green
+    # red -> yellow -> green -> red
 
     current_phase_state = current_phases[current_index]['state']  # e.g. 'GrGGGGg'
     next_possible_phases = calculate_all_possible_transitions(current_phase_state)
@@ -261,6 +283,10 @@ def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
 
 @app.route('/step', methods=['POST'])
 def step_simulation() -> Union[tuple[str, int], Response]:
+    """
+    Step the simulation forward
+    :return: Simulation metrics after stepping
+    """
     global simulations
     request_data = request.get_json()
     session_id = request_data.get('session_id')
@@ -291,13 +317,18 @@ def step_simulation() -> Union[tuple[str, int], Response]:
 
     return jsonify({
         'status': 'success',
-        'cars_in_lane': last_vehicle_in_lane,
+        'how_many_cars_passed_the_tls': 'TODO',
+        'cars_in_lanes': last_vehicle_in_lane,
         'longest_waiting_time_car_in_lane': longest_waiting_time_car_in_lane
     })
 
 
 @app.route('/', methods=['GET'])
 def health_check():
+    """
+    Health check endpoint
+    :return: JSON response
+    """
     return jsonify({
         'status': 'healthy'
     })
