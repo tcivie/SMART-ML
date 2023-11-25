@@ -13,6 +13,14 @@ app.debug = False
 simulations = {}
 
 
+def get_connection(session_id):
+    global simulations
+    sim = simulations.get(session_id)
+    if sim is None:
+        return
+    return sim.get('conn')
+
+
 def start_sumo(config_path: str, port: int, session_id: str):
     print(f"Starting SUMO with config {config_path} on port {port}")
     sumo_args = ['sumo', '-c', config_path]
@@ -34,6 +42,7 @@ def find_available_port() -> int:
 
 @app.route('/start', methods=['POST'])
 def start_simulation():
+    global simulations
     request_data = request.get_json()
     config_path = request_data.get('config_path')
     if not config_path:
@@ -58,18 +67,17 @@ def start_simulation():
 
 @app.route('/stop', methods=['POST'])
 def stop_simulation() -> Union[tuple[str, int], Response]:
+    global simulations
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     if not session_id:
         return "No session ID provided", 400
 
-    if session_id not in simulations:
+    conn = get_connection(session_id)
+
+    if not conn:
         return "Session ID not found", 404
 
-    session = simulations.get(session_id)
-    if not session:
-        return "Session ID not found", 404
-    conn = session["conn"]
     conn.close()
     simulations.pop(session_id)
 
@@ -87,8 +95,7 @@ def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
     if session_id not in simulations:
         return "Session ID not found", 404
 
-    port = simulations[session_id]['port']
-    connection = simulations[session_id]['conn']
+    connection = get_connection(session_id)
 
     if connection is None:
         return "Session ID not found", 404

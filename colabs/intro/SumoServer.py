@@ -1,5 +1,6 @@
 import os
 import sys
+
 import traci
 
 # Check for the SUMO_HOME environment variable
@@ -12,7 +13,7 @@ else:
 # This is the command to run SUMO in headless mode
 sumoCmd = [
     "sumo-gui",
-    "-c", r"C:\Users\omera\Desktop\College\Year 4\Final Project\Cloned\scenarios\bologna\acosta\run.sumocfg"
+    "-c", r"C:\Users\omera\Desktop\College\Year 4\Final Project\Cloned\dockerImage\scenarios\bologna\acosta\run.sumocfg"
 ]
 
 # Start TraCI with the SUMO command
