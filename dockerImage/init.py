@@ -22,7 +22,7 @@ def get_connection(session_id) -> traci.connection.Connection:
 
 def start_sumo(config_path: str, port: int, session_id: str) -> Union[traci.connection.Connection, None]:
     print(f"Starting SUMO with config {config_path} on port {port}")
-    sumo_args = ['sumo', '-c', config_path]
+    sumo_args = ['sumo-gui', '-c', config_path]
     label = session_id
     traci.start(sumo_args, port=port, label=label)
     try:
@@ -63,7 +63,7 @@ def start_simulation():
     }
 
     return jsonify({
-        'sessionId': session_id,
+        'sessionId': session_id
     })
 
 
@@ -137,29 +137,33 @@ def get_traffic_ligts_data(connection: traci.connection.Connection):
 
 @app.route('/traffic_lights/<tls_id>/phase', methods=['POST'])
 def set_next_phase(tls_id: str) -> Union[tuple[str, int], Response]:
-    session_id = request.args.get('session_id')
+    request_data = request.get_json()
+    session_id = request_data.get('session_id')
     if not session_id:
         return "No session ID provided", 400
 
     if session_id not in simulations:
         return "Session ID not found", 404
 
-    connection = get_connection(session_id)
+    conn = get_connection(session_id)
 
-    if connection is None:
+    if conn is None:
         return "Session ID not found", 404
 
-    current_index = connection.trafficlight.getPhase(tls_id)
-    current_logic = connection.trafficlight.getProgram(tls_id)
+    current_index = conn.trafficlight.getPhase(tls_id)
+    current_logic = conn.trafficlight.getProgram(tls_id)
+
+    tls = list(filter(lambda x: x['id'] == tls_id, simulations[session_id]['simulation_data']))[0]
 
     found = False
-    for logic in simulations[session_id]['simulation_data']['logics']:
+    for logic in tls['logics']:
         if logic['program_id'] == current_logic:
             next_possible_phase = (current_index + 1) % len(logic['phases'])
 
             logic['currentPhaseIndex'] = next_possible_phase
-            connection.trafficlight.setPhase(tls_id, next_possible_phase)
+            conn.trafficlight.setPhase(tls_id, next_possible_phase)
             found = True
+            conn.simulationStep()
             break
 
     if not found:
@@ -204,21 +208,22 @@ def calculate_all_possible_transitions(current_phase_state):
 
 @app.route('/traffic_lights/<tls_id>/switch_program', methods=['POST'])
 def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
-    session_id = request.args.get('session_id')
-    new_program_id = request.args.get('program_id')
+    request_data = request.get_json()
+    session_id = request_data.get('session_id')
+    new_program_id = request_data.get('program_id')
     if not session_id:
         return "No session ID provided", 400
 
     if session_id not in simulations:
         return "Session ID not found", 404
 
-    connection = get_connection(session_id)
+    conn = get_connection(session_id)
 
-    if connection is None:
-        return "Session ID not found", 404
+    if conn is None:
+        return "Connection not found", 404
 
-    current_index = connection.trafficlight.getPhase(tls_id)
-    current_logic = connection.trafficlight.getProgram(tls_id)
+    current_index = conn.trafficlight.getPhase(tls_id)
+    current_logic = conn.trafficlight.getProgram(tls_id)
 
     current_phases = None
     new_phases = None
@@ -240,11 +245,18 @@ def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
 
     for i, phase in enumerate(new_phases):
         if phase['state'] in next_possible_phases:
-            connection.trafficlight.setProgram(tls_id, new_program_id)
-            connection.trafficlight.setPhase(tls_id, i)
+            conn.trafficlight.setProgram(tls_id, new_program_id)
+            conn.trafficlight.setPhase(tls_id, i)
             simulations[session_id]['simulation_data']['current_phase'] = i
             simulations[session_id]['simulation_data']['program'] = new_program_id
 
+            conn.simulationStep()
+
+            return jsonify({
+                'status': 'success'
+            })
+
+    return "Failed to switch logic", 500
 
 
 @app.route('/step', methods=['POST'])
@@ -261,7 +273,7 @@ def step_simulation() -> Union[tuple[str, int], Response]:
         return "Session ID not found", 404
 
     steps = request_data.get('steps')
-    if steps and str.isdigit(steps):
+    if steps and str(steps).isdigit():
         steps = int(steps)
     else:
         steps = 1
@@ -269,8 +281,18 @@ def step_simulation() -> Union[tuple[str, int], Response]:
     for i in range(steps):
         conn.simulationStep()
 
+    last_vehicle_in_lane = {}
+    longest_waiting_time_car_in_lane = {}
+    for i, lane in enumerate(conn.trafficlight.getControlledLanes("209")):
+        last_vehicle_in_lane[lane] = conn.lane.getLastStepVehicleIDs(lane)
+        if last_vehicle_in_lane[lane]:
+            longest_waiting_time_car_in_lane[lane] = conn.vehicle.getWaitingTime(last_vehicle_in_lane[lane][-1])
+
+
     return jsonify({
-        'success': True,
+        'status': 'success',
+        'cars_in_lane': last_vehicle_in_lane,
+        'longest_waiting_time_car_in_lane': longest_waiting_time_car_in_lane
     })
 
 
