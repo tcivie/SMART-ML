@@ -3,6 +3,7 @@ import socket
 import uuid
 from typing import Union, Any
 
+import sumolib.net
 import traci
 from flask import Flask, request, jsonify, Response
 from functools import lru_cache
@@ -14,7 +15,7 @@ app.debug = False
 simulations = {}  # {session_id: {port: int, conn: traci.connection.Connection, simulation_data: list[dict[str, Any]]}}
 
 
-def get_connection(session_id):
+def get_connection(session_id) -> traci.connection.Connection:
     global simulations
     return simulations.get(session_id, {}).get('conn')
 
@@ -78,7 +79,6 @@ def stop_simulation() -> Union[tuple[str, int], Response]:
 
     if not conn:
         return "Session ID not found", 404
-
     conn.close()
     simulations.pop(session_id)
 
