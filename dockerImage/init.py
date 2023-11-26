@@ -250,7 +250,9 @@ def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
     current_phases = None
     new_phases = None
 
-    for logic in simulations[session_id]['simulation_data']['logics']:
+    tls = list(filter(lambda x: x['id'] == tls_id, simulations[session_id]['simulation_data']))[0]
+
+    for logic in tls['logics']:
         if logic['program_id'] == current_logic:
             current_phases = logic['phases']
             continue
@@ -269,8 +271,8 @@ def switch_program(tls_id: str) -> Union[tuple[str, int], Response]:
         if phase['state'] in next_possible_phases:
             conn.trafficlight.setProgram(tls_id, new_program_id)
             conn.trafficlight.setPhase(tls_id, i)
-            simulations[session_id]['simulation_data']['current_phase'] = i
-            simulations[session_id]['simulation_data']['program'] = new_program_id
+            tls['current_phase'] = i
+            tls['program'] = new_program_id
 
             conn.simulationStep()
 
