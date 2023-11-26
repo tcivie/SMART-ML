@@ -49,6 +49,10 @@ class Simulation:
         self.conn.close()
 
     def get_traffic_lights_data(self) -> list[dict]:
+        """
+        Get the traffic lights data from the simulation(TraCI) and cache it
+        :return: List of traffic lights data
+        """
         if self._traffic_lights_cache is not None:
             return self._traffic_lights_cache
 
@@ -81,6 +85,12 @@ class Simulation:
         return returned_traffic_lights
 
     def switch_traffic_light_program(self, tls_id: str, new_program_id: str) -> bool:
+        """
+        Switch the traffic light program to the new program
+        :param tls_id:
+        :param new_program_id:
+        :return: Success or not
+        """
         current_index = self.conn.trafficlight.getPhase(tls_id)
         current_logic = self.conn.trafficlight.getProgram(tls_id)
 
@@ -111,6 +121,11 @@ class Simulation:
         return False
 
     def set_traffic_light_phase(self, tls_id: str) -> bool:
+        """
+        Set the traffic light to the next possible phase
+        :param tls_id:
+        :return: Success or not
+        """
         current_index = self.conn.trafficlight.getPhase(tls_id)
         current_logic = self.conn.trafficlight.getProgram(tls_id)
         tls = self.get_specific_traffic_light(tls_id)
@@ -124,6 +139,11 @@ class Simulation:
         return False
 
     def get_specific_traffic_light(self, tls_id: str) -> Optional[dict]:
+        """
+        Get the traffic light data for a specific traffic light
+        :param tls_id:
+        :return: Traffic light data
+        """
         all_traffic_lights = self.get_traffic_lights_data()
         tls = next((tls for tls in all_traffic_lights if tls['id'] == tls_id), None)
         if tls is None:
@@ -131,6 +151,12 @@ class Simulation:
         return tls
 
     def step_simulation(self, steps: int = 1, tls_ids=None) -> dict:
+        """
+        Step the simulation by the specified number of steps
+        :param steps:
+        :param tls_ids:
+        :return:
+        """
         for _ in range(steps):
             self.conn.simulationStep()
 
