@@ -53,12 +53,33 @@ class Simulation:
         """
         - All TLS IDs
             - Lane names
-            - Number of phases
             - Programs names(ID's)
+                - Number of phases
         - Number of parameters (7) TODO: Make this dynamic
         :return:
         """
-        pass
+        tls_ids = self._get_tls_ids_list()
+        ret = {"tls": {}, "params_count": 7}
+        ret_tls = ret['tls']
+        for tls in tls_ids:
+            lanes = self.conn.trafficlight.getControlledLanes(tls)
+            programs = self.conn.trafficlight.getAllProgramLogics(tls)
+            logics = []
+            for logic in programs:
+                logics.append({
+                    'program_id': logic.programID,
+                    'type': logic.type,
+                    'phases': [{
+                        'duration': phase.duration,
+                        'minDur': phase.minDur,
+                        'maxDur': phase.maxDur,
+                        'state': phase.state
+                    } for phase in logic.phases]
+                })
+            ret_tls[tls] = {'lanes': lanes, 'programs': logics}
+
+        return ret
+
         # list_of_tls = self.conn.trafficlight.getIDList()
         # tls_data = {}
         # for tls in list_of_tls:
@@ -67,7 +88,6 @@ class Simulation:
         #         'lanes': self.conn.trafficlight.getControlledLanes(tls),
         #     }
         #
-
 
     @property
     def port(self) -> int:
@@ -195,16 +215,18 @@ class Simulation:
             return None
         return tls
 
-    def _get_tls_ids_list(self, tls_ids):
+    def _get_tls_ids_list(self, *tls_ids):
         """
         Returns a list of traffic light system IDs to be processed.
         :param tls_ids: Single TLS ID, list of TLS IDs, or None.
         :return: List of TLS IDs.
         """
-        if isinstance(tls_ids, str):  # Single TLS ID provided
-            return [tls_ids]
-        elif isinstance(tls_ids, list):  # List of TLS IDs provided
-            return tls_ids
+        if tls_ids:
+            return list(tls_ids)
+        # if isinstance(tls_ids, str):  # Single TLS ID provided
+        #     return [tls_ids]
+        # elif isinstance(tls_ids, list):  # List of TLS IDs provided
+        #     return tls_ids
         else:  # No specific TLS IDs provided; use all TLS IDs
             return self.conn.trafficlight.getIDList()
 
