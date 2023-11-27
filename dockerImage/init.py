@@ -88,6 +88,7 @@ def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
 def set_next_phase(tls_id: str):
     request_data = request.get_json()
     session_id = request_data.get('session_id')
+    make_step = request_data.get('make_step', True)
 
     if not session_id:
         return "No session ID provided", 400
@@ -96,10 +97,14 @@ def set_next_phase(tls_id: str):
     if not sim:
         return "Session ID not found", 404
 
-    success = sim.set_traffic_light_phase(tls_id)
-    if not success:
+    metrics = sim.set_traffic_light_phase(tls_id, make_step=make_step)
+    if not metrics:
         return "Traffic light not found or phase update failed", 404
 
+    if make_step:
+        return jsonify({'status': 'success',
+                        'simulation_metrics': metrics
+                        }), 200
     return jsonify({'status': 'success'}), 200
 
 
@@ -108,6 +113,7 @@ def switch_program(tls_id: str):
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     new_program_id = request_data.get('program_id')
+    make_step = request_data.get('make_step', True)
 
     if not session_id:
         return "No session ID provided", 400
@@ -116,10 +122,14 @@ def switch_program(tls_id: str):
     if not sim:
         return "Session ID not found", 404
 
-    success = sim.switch_traffic_light_program(tls_id, new_program_id)
-    if not success:
+    metrics = sim.switch_traffic_light_program(tls_id, new_program_id, make_step=make_step)
+    if not metrics:
         return "Failed to switch logic", 500
 
+    if make_step:
+        return jsonify({'status': 'success',
+                        'simulation_metrics': metrics
+                        }), 200
     return jsonify({'status': 'success'}), 200
 
 
@@ -144,6 +154,7 @@ def step_simulation():
         'status': 'success',
         'simulation_metrics': metrics
     }), 200
+
 
 @app.route('/reset/<session_id>', methods=['POST'])
 def reset_simulation(session_id: str):

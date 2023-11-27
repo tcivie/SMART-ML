@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, Union
 
 import traci
 
@@ -88,9 +88,11 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
-    def switch_traffic_light_program(self, tls_id: str, new_program_id: str) -> bool:
+    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: bool = True) -> Union[
+        bool, dict]:
         """
         Switch the traffic light program to the new program
+        :param make_step: If make simulation step at the end of the change
         :param tls_id:
         :param new_program_id:
         :return: Success or not
@@ -119,14 +121,16 @@ class Simulation:
             if phase['state'] in next_possible_phases:
                 self.conn.trafficlight.setProgram(tls_id, new_program_id)
                 self.conn.trafficlight.setPhase(tls_id, i)
-                self.conn.simulationStep()
+                if make_step:
+                    return self.step_simulation(tls_ids=[tls_id])
                 return True
 
         return False
 
-    def set_traffic_light_phase(self, tls_id: str) -> bool:
+    def set_traffic_light_phase(self, tls_id: str, make_step: bool = True) -> Union[dict, bool]:
         """
         Set the traffic light to the next possible phase
+        :param make_step: If make simulation step at the end of the change
         :param tls_id:
         :return: Success or not
         """
@@ -137,8 +141,9 @@ class Simulation:
         for logic in tls['logics']:
             if logic['program_id'] == current_logic:
                 next_possible_phase = (current_index + 1) % len(logic['phases'])
-                self.conntrafficlight.setPhase(tls_id, next_possible_phase)
-                self.conn.simulationStep()
+                self.conn.trafficlight.setPhase(tls_id, next_possible_phase)
+                if make_step:
+                    return self.step_simulation(tls_ids=[tls_id])
                 return True
         return False
 
