@@ -49,6 +49,26 @@ class Simulation:
             return getattr(self._conn, name)
         raise AttributeError(f"'Simulation' object has no attribute '{name}'")
 
+    def __dict__(self):
+        """
+        - All TLS IDs
+            - Lane names
+            - Number of phases
+            - Programs names(ID's)
+        - Number of parameters (7) TODO: Make this dynamic
+        :return:
+        """
+        pass
+        # list_of_tls = self.conn.trafficlight.getIDList()
+        # tls_data = {}
+        # for tls in list_of_tls:
+        #     tls = self._get_specific_traffic_light(tls_id)
+        #     tls_data[tls] = {
+        #         'lanes': self.conn.trafficlight.getControlledLanes(tls),
+        #     }
+        #
+
+
     @property
     def port(self) -> int:
         return self._port
@@ -117,7 +137,7 @@ class Simulation:
         current_logic = self.conn.trafficlight.getProgram(tls_id)
 
         current_phases, new_phases = None, None
-        tls = self.get_specific_traffic_light(tls_id)
+        tls = self._get_specific_traffic_light(tls_id)
 
         for logic in tls['logics']:
             if logic['program_id'] == current_logic:
@@ -152,7 +172,7 @@ class Simulation:
         """
         current_index = self.conn.trafficlight.getPhase(tls_id)
         current_logic = self.conn.trafficlight.getProgram(tls_id)
-        tls = self.get_specific_traffic_light(tls_id)
+        tls = self._get_specific_traffic_light(tls_id)
 
         for logic in tls['logics']:
             if logic['program_id'] == current_logic:
@@ -163,7 +183,7 @@ class Simulation:
                 return True
         return False
 
-    def get_specific_traffic_light(self, tls_id: str) -> Optional[dict]:
+    def _get_specific_traffic_light(self, tls_id: str) -> Optional[dict]:
         """
         Get the traffic light data for a specific traffic light
         :param tls_id:
@@ -175,7 +195,7 @@ class Simulation:
             return None
         return tls
 
-    def get_tls_ids_list(self, tls_ids):
+    def _get_tls_ids_list(self, tls_ids):
         """
         Returns a list of traffic light system IDs to be processed.
         :param tls_ids: Single TLS ID, list of TLS IDs, or None.
@@ -196,7 +216,7 @@ class Simulation:
             self.conn.simulationStep()
 
         # Determine the TLS IDs to process
-        tls_ids_list = self.get_tls_ids_list(tls_ids)
+        tls_ids_list = self._get_tls_ids_list(tls_ids)
 
         vehicles_in_tls = initialize_vehicles_in_tls(tls_ids_list)
 
@@ -207,14 +227,14 @@ class Simulation:
                 vehicles_in_tls[tls_id]['lanes'][lane] = lane_vehicle_ids
                 vehicles_in_tls[tls_id]['total'] += len(lane_vehicle_ids)
 
-                metrics_per_lane = self.calculate_lane_metrics(lane, lane_vehicle_ids)
+                metrics_per_lane = self._calculate_lane_metrics(lane, lane_vehicle_ids)
                 vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'][lane] = metrics_per_lane
 
         return {
             'vehicles_in_tls': vehicles_in_tls,
         }
 
-    def calculate_lane_metrics(self, lane, vehicle_ids):
+    def _calculate_lane_metrics(self, lane, vehicle_ids):
         metrics = {}
         if vehicle_ids:
             max_wait_time = round(self.conn.vehicle.getWaitingTime(vehicle_ids[-1]), 2)

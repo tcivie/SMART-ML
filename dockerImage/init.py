@@ -1,7 +1,7 @@
 import os
 import socket
 import uuid
-from typing import Union, Any, Dict
+from typing import Union, Any, Dict, Tuple
 from flask import Flask, request, jsonify, Response
 from dockerImage.sumo_sim.Simulation import Simulation
 
@@ -21,10 +21,11 @@ def start_simulation():
     global simulations
     request_data = request.get_json()
     config_path = request_data.get('config_path')
+    is_gui = request_data.get('is_gui', False)
     if not config_path:
         return "No config path provided", 400
 
-    sim = Simulation(config_path, is_gui=True)  # TODO: Change to False
+    sim = Simulation(config_path, is_gui=is_gui)  # TODO: Change to False
     if not sim.conn:
         return jsonify({
             'success': False,
@@ -82,6 +83,27 @@ def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
     returned_traffic_lights = sim.get_traffic_lights_data()
 
     return returned_traffic_lights
+
+@app.route('/init_data/<session_id>', methods=['GET'])
+def get_init_data(session_id: str) -> Union[tuple[str, int], tuple[Response, int]]:
+    """
+    Get the traffic lights of the simulation
+    :return: JSON response
+    """
+    if not session_id:
+        return "No session ID provided", 400
+
+    if session_id not in simulations:
+        return "Session ID not found", 404
+
+    sim = simulations.get(session_id)
+
+    if sim is None:
+        return "Session ID not found", 404
+
+    return jsonify({
+        'data': str(sim)
+    }), 200
 
 
 @app.route('/traffic_lights/<tls_id>/phase', methods=['POST'])
