@@ -6,6 +6,22 @@ import traci
 from dockerImage.sumo_sim.utils import find_available_port, calculate_all_possible_transitions
 
 
+def initialize_vehicles_in_tls(tls_ids_list):
+    """
+    Initializes the data structure for vehicle information for each TLS ID.
+    :param tls_ids_list: List of TLS IDs.
+    :return: Dictionary with initialized data for each TLS.
+    """
+    vehicles_in_tls = {}
+    for tls_id in tls_ids_list:
+        vehicles_in_tls[tls_id] = {
+            "total": 0,
+            "lanes": {},
+            'longest_waiting_time_car_in_lane': {}
+        }
+    return vehicles_in_tls
+
+
 class Simulation:
 
     def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
@@ -159,43 +175,68 @@ class Simulation:
             return None
         return tls
 
+    def get_tls_ids_list(self, tls_ids):
+        """
+        Returns a list of traffic light system IDs to be processed.
+        :param tls_ids: Single TLS ID, list of TLS IDs, or None.
+        :return: List of TLS IDs.
+        """
+        if isinstance(tls_ids, str):  # Single TLS ID provided
+            return [tls_ids]
+        elif isinstance(tls_ids, list):  # List of TLS IDs provided
+            return tls_ids
+        else:  # No specific TLS IDs provided; use all TLS IDs
+            return self.conn.trafficlight.getIDList()
+
     def step_simulation(self, steps: int = 1, tls_ids=None) -> dict:
         """
-        Step the simulation by the specified number of steps
-        :param steps:
-        :param tls_ids:
-        :return:
+        Step the simulation by the specified number of steps.
         """
         for _ in range(steps):
             self.conn.simulationStep()
 
         # Determine the TLS IDs to process
-        if isinstance(tls_ids, str):  # Single TLS ID provided
-            tls_ids_list = [tls_ids]
-        elif isinstance(tls_ids, list):  # List of TLS IDs provided
-            tls_ids_list = tls_ids
-        else:  # No specific TLS IDs provided; use all TLS IDs
-            tls_ids_list = self.conn.trafficlight.getIDList()
+        tls_ids_list = self.get_tls_ids_list(tls_ids)
 
-        vehicles_in_tls = {}
-        longest_waiting_time_car_in_lane = {}
+        vehicles_in_tls = initialize_vehicles_in_tls(tls_ids_list)
 
         for tls_id in tls_ids_list:
-            vehicles_in_tls[tls_id] = {
-                "total": 0,
-                "lanes": {},
-                'longest_waiting_time_car_in_lane': {}
-            }
-
             controlled_lanes = self.conn.trafficlight.getControlledLanes(tls_id)
             for lane in controlled_lanes:
-                vehicles_in_tls[tls_id]['lanes'][lane] = self.conn.lane.getLastStepVehicleIDs(lane)
-                vehicles_in_tls[tls_id]['total'] += len(vehicles_in_tls[tls_id]['lanes'][lane])
-                if vehicles_in_tls[tls_id]['lanes'][lane]:
-                    longest_waiting_time_car_in_lane[lane] = self.conn.vehicle.getWaitingTime(vehicles_in_tls[tls_id]['lanes'][lane][-1])
+                lane_vehicle_ids = self.conn.lane.getLastStepVehicleIDs(lane)
+                vehicles_in_tls[tls_id]['lanes'][lane] = lane_vehicle_ids
+                vehicles_in_tls[tls_id]['total'] += len(lane_vehicle_ids)
 
-            vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'] = longest_waiting_time_car_in_lane
+                metrics_per_lane = self.calculate_lane_metrics(lane, lane_vehicle_ids)
+                vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'][lane] = metrics_per_lane
 
         return {
             'vehicles_in_tls': vehicles_in_tls,
         }
+
+    def calculate_lane_metrics(self, lane, vehicle_ids):
+        metrics = {}
+        if vehicle_ids:
+            max_wait_time = round(self.conn.vehicle.getWaitingTime(vehicle_ids[-1]), 2)
+            min_wait_time = round(self.conn.vehicle.getWaitingTime(vehicle_ids[0]), 2)
+            total_cars = len(vehicle_ids)
+
+            # Additional metrics
+            average_speed = round(self.conn.lane.getLastStepMeanSpeed(lane), 2)
+            queue_length = self.conn.lane.getLastStepHaltingNumber(lane)
+            occupancy = round(self.conn.lane.getLastStepOccupancy(lane), 2)
+
+            # Emission metrics (example for CO2)
+            total_co2_emission = round(sum(self.conn.vehicle.getCO2Emission(veh_id) for veh_id in vehicle_ids), 2)
+
+            metrics.update({
+                'max_wait_time': max_wait_time,
+                'min_wait_time': min_wait_time,
+                'total_cars': total_cars,
+                'average_speed': average_speed,
+                'queue_length': queue_length,
+                'occupancy': occupancy,
+                'total_co2_emission': total_co2_emission
+            })
+
+        return metrics
