@@ -145,6 +145,16 @@ def step_simulation():
         'simulation_metrics': metrics
     }), 200
 
+@app.route('/reset/<session_id>', methods=['POST'])
+def reset_simulation(session_id: str):
+    sim = simulations.get(session_id)
+    if not sim:
+        return "Session ID not found", 404
+    sim.reset()
+    return jsonify({
+        'status': 'success'
+    }), 200
+
 
 @app.route('/', methods=['GET'])
 def health_check():

@@ -48,6 +48,10 @@ class Simulation:
     def close(self) -> None:
         self.conn.close()
 
+    def reset(self) -> None:
+        self.conn.load(['-c', self._config_path])
+        self._traffic_lights_cache = None
+
     def get_traffic_lights_data(self) -> list[dict]:
         """
         Get the traffic lights data from the simulation(TraCI) and cache it
