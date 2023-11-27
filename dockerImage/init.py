@@ -86,6 +86,11 @@ def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
 
 @app.route('/traffic_lights/<tls_id>/phase', methods=['POST'])
 def set_next_phase(tls_id: str):
+    """
+    Set the next phase of a traffic light (if make_step is true, make a step after setting the phase and return the simulation metrics (metrics for the tls_id))
+    :param tls_id: Traffic light ID
+    :return:
+    """
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     make_step = request_data.get('make_step', True)
@@ -110,6 +115,12 @@ def set_next_phase(tls_id: str):
 
 @app.route('/traffic_lights/<tls_id>/switch_program', methods=['POST'])
 def switch_program(tls_id: str):
+    """
+    Switch the program of a traffic light
+    if make_step is true, make a step after switching the program and return the simulation metrics (metrics for the tls_id)
+    :param tls_id: Traffic light ID
+    :return:
+    """
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     new_program_id = request_data.get('program_id')
@@ -135,8 +146,15 @@ def switch_program(tls_id: str):
 
 @app.route('/step', methods=['POST'])
 def step_simulation():
+    """
+    Step the simulation by the specified number of steps
+    If no steps are specified, step by 1
+    If show_data_for_tls_ids is specified, only return data for those traffic lights (if specified null or empty, return all) - Can be a single ID or a list of IDs
+    :return:
+    """
     request_data = request.get_json()
     session_id = request_data.get('session_id')
+    tls_ids = request_data.get('show_data_for_tls_ids')
 
     if not session_id:
         return "No session ID provided", 400
@@ -149,7 +167,7 @@ def step_simulation():
     if str(steps).isdigit():
         steps = int(steps)
 
-    metrics = sim.step_simulation(steps=steps, tls_ids='209')
+    metrics = sim.step_simulation(steps=steps, tls_ids=tls_ids)
     return jsonify({
         'status': 'success',
         'simulation_metrics': metrics
@@ -158,6 +176,11 @@ def step_simulation():
 
 @app.route('/reset/<session_id>', methods=['POST'])
 def reset_simulation(session_id: str):
+    """
+    Reset the simulation and clears the metrics/cache
+    :param session_id:
+    :return:
+    """
     sim = simulations.get(session_id)
     if not sim:
         return "Session ID not found", 404

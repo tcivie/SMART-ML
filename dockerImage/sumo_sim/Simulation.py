@@ -177,17 +177,25 @@ class Simulation:
         else:  # No specific TLS IDs provided; use all TLS IDs
             tls_ids_list = self.conn.trafficlight.getIDList()
 
-        last_vehicle_in_lane = {}
+        vehicles_in_tls = {}
         longest_waiting_time_car_in_lane = {}
 
         for tls_id in tls_ids_list:
+            vehicles_in_tls[tls_id] = {
+                "total": 0,
+                "lanes": {},
+                'longest_waiting_time_car_in_lane': {}
+            }
+
             controlled_lanes = self.conn.trafficlight.getControlledLanes(tls_id)
             for lane in controlled_lanes:
-                last_vehicle_in_lane[lane] = self.conn.lane.getLastStepVehicleIDs(lane)
-                if last_vehicle_in_lane[lane]:
-                    longest_waiting_time_car_in_lane[lane] = self.conn.vehicle.getWaitingTime(last_vehicle_in_lane[lane][-1])
+                vehicles_in_tls[tls_id]['lanes'][lane] = self.conn.lane.getLastStepVehicleIDs(lane)
+                vehicles_in_tls[tls_id]['total'] += len(vehicles_in_tls[tls_id]['lanes'][lane])
+                if vehicles_in_tls[tls_id]['lanes'][lane]:
+                    longest_waiting_time_car_in_lane[lane] = self.conn.vehicle.getWaitingTime(vehicles_in_tls[tls_id]['lanes'][lane][-1])
+
+            vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'] = longest_waiting_time_car_in_lane
 
         return {
-            'cars_in_lanes': last_vehicle_in_lane,
-            'longest_waiting_time_car_in_lane': longest_waiting_time_car_in_lane
+            'vehicles_in_tls': vehicles_in_tls,
         }
