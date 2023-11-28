@@ -44,11 +44,6 @@ class Simulation:
         traci.start(sumo_args, port=port, label=self._session_id)
         self._conn = traci.getConnection(self._session_id)
 
-    def __getattr__(self, name):
-        if hasattr(self._conn, name):
-            return getattr(self._conn, name)
-        raise AttributeError(f"'Simulation' object has no attribute '{name}'")
-
     def __dict__(self):
         """
         - All TLS IDs
@@ -68,7 +63,6 @@ class Simulation:
             for logic in programs:
                 logics.append({
                     'program_id': logic.programID,
-                    'type': logic.type,
                     'phases': [{
                         'duration': phase.duration,
                         'minDur': phase.minDur,
@@ -221,12 +215,12 @@ class Simulation:
         :param tls_ids: Single TLS ID, list of TLS IDs, or None.
         :return: List of TLS IDs.
         """
-        if tls_ids:
-            return list(tls_ids)
-        # if isinstance(tls_ids, str):  # Single TLS ID provided
-        #     return [tls_ids]
-        # elif isinstance(tls_ids, list):  # List of TLS IDs provided
-        #     return tls_ids
+        # if tls_ids:
+        #     return list(tls_ids)
+        if isinstance(tls_ids, str):  # Single TLS ID provided
+            return [tls_ids]
+        elif isinstance(tls_ids, list):  # List of TLS IDs provided
+            return tls_ids
         else:  # No specific TLS IDs provided; use all TLS IDs
             return self.conn.trafficlight.getIDList()
 

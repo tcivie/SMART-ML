@@ -1,3 +1,4 @@
 sumolib==1.19.0
 traci==1.19.0
 flask==3.0.0
+requests==2.31.0

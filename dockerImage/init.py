@@ -84,6 +84,7 @@ def get_traffic_lights() -> Union[tuple[str, int], list[dict[str, Any]]]:
 
     return returned_traffic_lights
 
+
 @app.route('/init_data/<session_id>', methods=['GET'])
 def get_init_data(session_id: str) -> Union[tuple[str, int], tuple[Response, int]]:
     """
@@ -101,8 +102,9 @@ def get_init_data(session_id: str) -> Union[tuple[str, int], tuple[Response, int
     if sim is None:
         return "Session ID not found", 404
 
+    sim_dict = sim.__dict__()
     return jsonify({
-        'data': str(sim)
+        'data': sim_dict
     }), 200
 
 
