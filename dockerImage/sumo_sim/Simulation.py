@@ -57,7 +57,8 @@ class Simulation:
         ret = {"tls": {}, "params_count": 7}
         ret_tls = ret['tls']
         for tls in tls_ids:
-            lanes = self.conn.trafficlight.getControlledLanes(tls)
+            lanes = list(set(self.conn.trafficlight.getControlledLanes(tls))) # TODO: See why we get duplicates
+            lanes.sort()
             programs = self.conn.trafficlight.getAllProgramLogics(tls)
             logics = []
             for logic in programs:
@@ -138,7 +139,7 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
-    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: bool = True) -> Union[
+    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1) -> Union[
         bool, dict]:
         """
         Switch the traffic light program to the new program
@@ -171,13 +172,13 @@ class Simulation:
             if phase['state'] in next_possible_phases:
                 self.conn.trafficlight.setProgram(tls_id, new_program_id)
                 self.conn.trafficlight.setPhase(tls_id, i)
-                if make_step:
-                    return self.step_simulation(tls_ids=[tls_id])
+                if make_step > 0:
+                    return self.step_simulation(steps=make_step, tls_ids=[tls_id])
                 return True
 
         return False
 
-    def set_traffic_light_phase(self, tls_id: str, make_step: bool = True) -> Union[dict, bool]:
+    def set_traffic_light_phase(self, tls_id: str, make_step: int = 1) -> Union[dict, bool]:
         """
         Set the traffic light to the next possible phase
         :param make_step: If make simulation step at the end of the change
@@ -192,8 +193,8 @@ class Simulation:
             if logic['program_id'] == current_logic:
                 next_possible_phase = (current_index + 1) % len(logic['phases'])
                 self.conn.trafficlight.setPhase(tls_id, next_possible_phase)
-                if make_step:
-                    return self.step_simulation(tls_ids=[tls_id])
+                if make_step > 0:
+                    return self.step_simulation(steps=make_step, tls_ids=[tls_id])
                 return True
         return False
 
@@ -215,12 +216,12 @@ class Simulation:
         :param tls_ids: Single TLS ID, list of TLS IDs, or None.
         :return: List of TLS IDs.
         """
-        # if tls_ids:
-        #     return list(tls_ids)
-        if isinstance(tls_ids, str):  # Single TLS ID provided
-            return [tls_ids]
-        elif isinstance(tls_ids, list):  # List of TLS IDs provided
-            return tls_ids
+        tls_id_unpacked = tls_ids[0] if tls_ids else None
+
+        if isinstance(tls_id_unpacked, str):  # Single TLS ID provided
+            return [tls_id_unpacked]
+        elif isinstance(tls_id_unpacked, list):  # List of TLS IDs provided
+            return tls_id_unpacked
         else:  # No specific TLS IDs provided; use all TLS IDs
             return self.conn.trafficlight.getIDList()
 

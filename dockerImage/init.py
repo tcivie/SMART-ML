@@ -117,7 +117,7 @@ def set_next_phase(tls_id: str):
     """
     request_data = request.get_json()
     session_id = request_data.get('session_id')
-    make_step = request_data.get('make_step', True)
+    make_step = request_data.get('make_step', 1)
 
     if not session_id:
         return "No session ID provided", 400
@@ -148,7 +148,7 @@ def switch_program(tls_id: str):
     request_data = request.get_json()
     session_id = request_data.get('session_id')
     new_program_id = request_data.get('program_id')
-    make_step = request_data.get('make_step', True)
+    make_step = request_data.get('make_step', 1)
 
     if not session_id:
         return "No session ID provided", 400
