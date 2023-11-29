@@ -34,14 +34,14 @@ def get_traffic_lights(session_id):
     return response.json()
 
 
-def set_traffic_light_phase(tls_id, session_id, make_step=True):
+def set_traffic_light_phase(tls_id, session_id, make_step=1):
     """Sets the next traffic light phase for the given traffic light ID."""
     url = f'{BASE_URL}/traffic_lights/{tls_id}/phase'
     response = requests.post(url, json={'session_id': session_id, 'make_step': make_step})
     return response.json()
 
 
-def switch_traffic_light_program(tls_id, session_id, program_id, make_step=True):
+def switch_traffic_light_program(tls_id, session_id, program_id, make_step=1):
     """Switches the program of a traffic light for the given traffic light ID."""
     url = f'{BASE_URL}/traffic_lights/{tls_id}/switch_program'
     response = requests.post(url, json={'session_id': session_id, 'program_id': program_id, 'make_step': make_step})
