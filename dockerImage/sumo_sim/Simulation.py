@@ -139,7 +139,7 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
-    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1) -> Union[
+    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1,*,forced = False) -> Union[
         bool, dict]:
         """
         Switch the traffic light program to the new program
@@ -169,7 +169,7 @@ class Simulation:
         next_possible_phases = calculate_all_possible_transitions(current_phase_state)
 
         for i, phase in enumerate(new_phases):
-            if phase['state'] in next_possible_phases:
+            if phase['state'] in next_possible_phases or forced:
                 self.conn.trafficlight.setProgram(tls_id, new_program_id)
                 self.conn.trafficlight.setPhase(tls_id, i)
                 if make_step > 0:
