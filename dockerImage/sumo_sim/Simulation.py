@@ -25,6 +25,7 @@ def initialize_vehicles_in_tls(tls_ids_list):
 class Simulation:
 
     def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
+        self.vehicles_in_tls = None
         self._conn = None
         self._traffic_lights_cache = None
 
@@ -102,6 +103,7 @@ class Simulation:
     def reset(self) -> None:
         self.conn.load(['-c', self._config_path])
         self._traffic_lights_cache = None
+        self.vehicles_in_tls = None
 
     def get_traffic_lights_data(self) -> list[dict]:
         """
@@ -232,24 +234,47 @@ class Simulation:
         for _ in range(steps):
             self.conn.simulationStep()
 
+        vehicles_in_tls, delta_cars_in_tls, cars_that_left = self._get_tls_statistics(tls_ids)
+
+        return {
+            'vehicles_in_tls': vehicles_in_tls,
+            'delta_cars_in_tls': delta_cars_in_tls,
+            'cars_that_left': cars_that_left,
+        }
+
+    def _get_tls_statistics(self, tls_ids):
+        # Check Diff for self.vehicles_in_tls
+        last_vehicles_in_tls = 0
+        cars_before_step = set()
+        if self.vehicles_in_tls:
+            for tls_id in self.vehicles_in_tls:
+                last_vehicles_in_tls += self.vehicles_in_tls[tls_id]['total']
+                for lane in self.vehicles_in_tls[tls_id]['lanes']:
+                    cars_before_step.update(self.vehicles_in_tls[tls_id]['lanes'][lane])
+
         # Determine the TLS IDs to process
         tls_ids_list = self._get_tls_ids_list(tls_ids)
-
-        vehicles_in_tls = initialize_vehicles_in_tls(tls_ids_list)
-
+        self.vehicles_in_tls = initialize_vehicles_in_tls(tls_ids_list)
         for tls_id in tls_ids_list:
             controlled_lanes = self.conn.trafficlight.getControlledLanes(tls_id)
             for lane in controlled_lanes:
                 lane_vehicle_ids = self.conn.lane.getLastStepVehicleIDs(lane)
-                vehicles_in_tls[tls_id]['lanes'][lane] = lane_vehicle_ids
-                vehicles_in_tls[tls_id]['total'] += len(lane_vehicle_ids)
+                self.vehicles_in_tls[tls_id]['lanes'][lane] = lane_vehicle_ids
+                self.vehicles_in_tls[tls_id]['total'] += len(lane_vehicle_ids)
 
                 metrics_per_lane = self._calculate_lane_metrics(lane, lane_vehicle_ids)
-                vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'][lane] = metrics_per_lane
+                self.vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'][lane] = metrics_per_lane
 
-        return {
-            'vehicles_in_tls': vehicles_in_tls,
-        }
+        # Calculate the delta
+        current_vehicles_in_tls = 0
+        cars_after_step = set()
+        for tls_id in self.vehicles_in_tls:
+            current_vehicles_in_tls += self.vehicles_in_tls[tls_id]['total']
+            for lane in self.vehicles_in_tls[tls_id]['lanes']:
+                cars_after_step.update(self.vehicles_in_tls[tls_id]['lanes'][lane])
+        delta_cars_in_tls = current_vehicles_in_tls - last_vehicles_in_tls
+        cars_that_left = len(cars_before_step - cars_after_step)
+        return self.vehicles_in_tls, delta_cars_in_tls, cars_that_left
 
     def _calculate_lane_metrics(self, lane, vehicle_ids):
         metrics = {}
