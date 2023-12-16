@@ -1,5 +1,6 @@
 import uuid
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any
+from dockerImage.sumo_sim.utils import update_config
 
 import traci
 
@@ -35,12 +36,14 @@ class Simulation:
         self._port = port if port is not None else find_available_port()
         self._session_id = session_id if session_id is not None else str(uuid.uuid4())
 
+        update_config(config_file=config_path, simulation_id=self._session_id)
+
         print(
             f"Starting SUMO {'with GUI' if is_gui else 'in headless mode'} with config {config_path} on port {self._port}")
         if is_gui:
-            sumo_args = ["sumo-gui", "-c", config_path]
+            sumo_args = ["sumo-gui","-c", config_path]
         else:
-            sumo_args = ["sumo", "-c", config_path]
+            sumo_args = ["sumo","-c", config_path]
 
         traci.start(sumo_args, port=port, label=self._session_id)
         self._conn = traci.getConnection(self._session_id)
@@ -227,7 +230,8 @@ class Simulation:
         else:  # No specific TLS IDs provided; use all TLS IDs
             return self.conn.trafficlight.getIDList()
 
-    def step_simulation(self, steps: int = 1, tls_ids=None) -> dict:
+    def step_simulation(self, steps: int = 1, tls_ids=None) -> Optional[
+        dict[str, Union[int, dict[Any, dict[str, Union[dict[Any, Any], int]]]]]]:
         """
         Step the simulation by the specified number of steps.
         """
@@ -240,6 +244,7 @@ class Simulation:
             'vehicles_in_tls': vehicles_in_tls,
             'delta_cars_in_tls': delta_cars_in_tls,
             'cars_that_left': cars_that_left,
+            'is_ended': self.conn.simulation.getMinExpectedNumber() == 0
         }
 
     def _get_tls_statistics(self, tls_ids):
