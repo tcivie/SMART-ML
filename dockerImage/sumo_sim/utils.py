@@ -73,6 +73,7 @@ def update_config(config_file: str, simulation_id: str) -> None:
     # Save the updated XML back to the file
     tree.write(config_file, encoding='UTF-8', xml_declaration=True)
 
+
 def add_or_update_element(parent, tag, value):
     """
     Add a new element or update an existing one within the parent element.
@@ -90,3 +91,72 @@ def add_or_update_element(parent, tag, value):
     if element is None:
         element = ET.SubElement(parent, tag)
     element.set('value', value)
+
+
+def parse_summary_xml(file_path):
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        summary_data = []
+        for step in root.findall('step'):
+            step_data = {
+                'time': float(step.get('time')),
+                'loaded': int(step.get('loaded')),
+                'inserted': int(step.get('inserted')),
+                'running': int(step.get('running')),
+                'waiting': int(step.get('waiting')),
+                'ended': int(step.get('ended')),
+                'arrived': int(step.get('arrived')),
+                'collisions': int(step.get('collisions')),
+                'teleports': int(step.get('teleports')),
+                'halting': int(step.get('halting')),
+                'stopped': int(step.get('stopped')),
+                'meanWaitingTime': float(step.get('meanWaitingTime')),
+                'meanTravelTime': float(step.get('meanTravelTime')),
+                'meanSpeed': float(step.get('meanSpeed')),
+                'meanSpeedRelative': float(step.get('meanSpeedRelative')),
+                'duration': int(step.get('duration'))
+            }
+            summary_data.append(step_data)
+        return summary_data
+    except ET.ParseError as e:
+        return f"Error parsing XML file: {e}"
+
+
+def parse_tripinfo_xml(file_path):
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        tripinfo_data = []
+        for tripinfo in root.findall('tripinfo'):
+            trip_data = {
+                'id': tripinfo.get('id'),
+                'depart': float(tripinfo.get('depart')),
+                'departLane': tripinfo.get('departLane'),
+                'departPos': float(tripinfo.get('departPos')),
+                'departSpeed': float(tripinfo.get('departSpeed')),
+                'departDelay': float(tripinfo.get('departDelay')),
+                'arrival': float(tripinfo.get('arrival')),
+                'arrivalLane': tripinfo.get('arrivalLane'),
+                'arrivalPos': float(tripinfo.get('arrivalPos')),
+                'arrivalSpeed': float(tripinfo.get('arrivalSpeed')),
+                'duration': float(tripinfo.get('duration')),
+                'routeLength': float(tripinfo.get('routeLength')),
+                'waitingTime': float(tripinfo.get('waitingTime')),
+                'waitingCount': int(tripinfo.get('waitingCount')),
+                'stopTime': float(tripinfo.get('stopTime')),
+                'timeLoss': float(tripinfo.get('timeLoss')),
+                'rerouteNo': int(tripinfo.get('rerouteNo')),
+                'vType': tripinfo.get('vType'),
+                'speedFactor': float(tripinfo.get('speedFactor'))
+            }
+
+            # # Extract emissions data if available
+            # emissions = tripinfo.find('emissions')
+            # if emissions is not None:
+            #     trip_data['emissions'] = {emission: float(emissions.get(emission)) for emission in emissions.keys()}
+
+            tripinfo_data.append(trip_data)
+        return tripinfo_data
+    except ET.ParseError as e:
+        return f"Error parsing XML file: {e}"
