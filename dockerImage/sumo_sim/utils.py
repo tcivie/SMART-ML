@@ -43,7 +43,7 @@ def calculate_all_possible_transitions(current_phase_state):
     return [''.join(state) for state in combined_transitions]
 
 
-def update_config(config_file: str, simulation_id: str) -> None:
+def update_config(config_file: str, simulation_id: str, params: list[str,str], architecture: str) -> None:
     """
     Update the SUMO configuration file to include an output-prefix with the given simulation ID.
     Adds the <output> section if it's missing, along with the necessary sub-elements.
@@ -69,6 +69,33 @@ def update_config(config_file: str, simulation_id: str) -> None:
     add_or_update_element(output_element, 'summary-output', 'summary.xml')
     add_or_update_element(output_element, 'tripinfo-output', 'tripinfo-output.xml')
     add_or_update_element(output_element, 'statistic-output', 'statistics.xml')
+
+    # <experiment_info>
+    #         <parameters>
+    #             <param key="HIDDEN_SIZE" value="64" />
+    #             <param key="LEARNING_RATE" value="1e-1" />
+    #             <param key="EPS_START" value="0.9" />
+    #             <param key="EPS_END" value="0.05" />
+    #             <param key="EPS_DECAY" value="1_000" />
+    #             <param key="BATCH_SIZE" value="128" />
+    #             <param key="GAMMA" value="0.80" />
+    #             <param key="TAU" value="0.005" />
+    #             <param key="MEM_SIZE" value="100_000" />
+    #             <param key="EPISODES" value="10" />
+    #         </parameters>
+    #         <architectures>
+    #             <architecture name="DQN" file="dqn.py" />
+    #         </architectures>
+    #     </experiment_info>
+    experiment_info_element = root.find('./experiment-info')
+    if experiment_info_element is None:
+        experiment_info_element = ET.SubElement(root, 'experiment-info')
+    parameter_element = ET.SubElement(experiment_info_element, 'parameters')
+    for key, value in params:
+        add_or_update_element(parameter_element, key, value)
+
+    architectures_element = ET.SubElement(experiment_info_element, 'architectures')
+    add_or_update_element(architectures_element, 'architecture', architecture)
 
     # Save the updated XML back to the file
     tree.write(config_file, encoding='UTF-8', xml_declaration=True)
