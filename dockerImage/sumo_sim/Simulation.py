@@ -144,7 +144,7 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
-    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1,*,forced = False) -> Union[
+    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1,*, forced = False) -> Union[
         bool, dict]:
         """
         Switch the traffic light program to the new program
