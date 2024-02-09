@@ -1,9 +1,11 @@
 import os
 import socket
 import uuid
+from pathlib import Path
 from typing import Union, Any, Dict, Tuple
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 from dockerImage.sumo_sim.Simulation import Simulation
+from dockerImage.sumo_sim.utils import append_to_tripinfo_sim_data
 
 app = Flask(__name__)
 app.debug = False
@@ -25,7 +27,9 @@ def start_simulation():
     if not config_path:
         return "No config path provided", 400
 
-    sim = Simulation(config_path, is_gui=is_gui)  # TODO: Change to False
+    sim = Simulation(config_path, is_gui=is_gui,
+                     params=request_data.get('params', {}),
+                     architecture=request_data.get('architecture', 'default'))
     if not sim.conn:
         return jsonify({
             'success': False,
@@ -57,9 +61,13 @@ def stop_simulation() -> Union[tuple[str, int], Response]:
     sim.close()
     simulations.pop(session_id)
 
-    return jsonify({
-        'status': 'success'
-    })
+    output_path = Path(sim._output_path)
+    new_filename = f"{session_id}tripinfo-output.xml"
+    new_file_path = output_path.with_name(new_filename)
+
+    append_to_tripinfo_sim_data(str(new_file_path), sim.params, sim.architecture)
+    # Send the file to the client
+    return send_file(str(new_file_path), as_attachment=True)
 
 
 @app.route('/traffic_lights', methods=['GET'])
