@@ -23,6 +23,9 @@ def initialize_vehicles_in_tls(tls_ids_list):
     return vehicles_in_tls
 
 
+3
+
+
 class Simulation:
 
     def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
@@ -41,9 +44,9 @@ class Simulation:
         print(
             f"Starting SUMO {'with GUI' if is_gui else 'in headless mode'} with config {config_path} on port {self._port}")
         if is_gui:
-            sumo_args = ["sumo-gui","-c", config_path]
+            sumo_args = ["sumo-gui", "-c", config_path]
         else:
-            sumo_args = ["sumo","-c", config_path]
+            sumo_args = ["sumo", "-c", config_path]
 
         traci.start(sumo_args, port=port, label=self._session_id)
         self._conn = traci.getConnection(self._session_id)
@@ -61,7 +64,7 @@ class Simulation:
         ret = {"tls": {}, "params_count": 7}
         ret_tls = ret['tls']
         for tls in tls_ids:
-            lanes = list(set(self.conn.trafficlight.getControlledLanes(tls))) # TODO: See why we get duplicates
+            lanes = list(set(self.conn.trafficlight.getControlledLanes(tls)))  # TODO: See why we get duplicates
             lanes.sort()
             programs = self.conn.trafficlight.getAllProgramLogics(tls)
             logics = []
@@ -144,8 +147,9 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
-    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1,*, forced = False) -> Union[
-        bool, dict]:
+    def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1, *, forced=False) -> \
+            Union[
+                bool, dict]:
         """
         Switch the traffic light program to the new program
         :param make_step: If make simulation step at the end of the change
@@ -210,9 +214,8 @@ class Simulation:
         :return: Traffic light data
         """
         all_traffic_lights = self.get_traffic_lights_data()
+        # for optimization purposes
         tls = next((tls for tls in all_traffic_lights if tls['id'] == tls_id), None)
-        if tls is None:
-            return None
         return tls
 
     def _get_tls_ids_list(self, *tls_ids):
@@ -307,3 +310,20 @@ class Simulation:
             })
 
         return metrics
+
+    def get_all_sim_data(self):
+        ret = dict()
+        tls_ids = self._get_tls_ids_list()
+
+        def process_tls(t_id):
+            tls_statistics = self._get_tls_statistics(t_id)
+            tls_ids[t_id] = {'tls_data': {}, 'vehicle_data': {}}
+            ret = tls_ids[t_id]
+            tls_data = ret['tls_data']
+            tls_data['logics'] = self.conn.trafficlight.getAllProgramLogics(t_id)
+            tls_data['blocking_count'] = len(self.conn.trafficlight.getBlockingVehicles(t_id))
+            tls_data['phase_index'] = len(self.conn.trafficlight.getPhase(t_id))
+            tls_data['total_phase_duration'] = len(self.conn.trafficlight.getPhaseDuration(t_id))
+
+        for tls_id in tls_ids:
+            process_tls(tls_id)
