@@ -1,3 +1,4 @@
+import re
 import socket
 from functools import lru_cache
 import xml.etree.ElementTree as ET
@@ -43,7 +44,7 @@ def calculate_all_possible_transitions(current_phase_state):
     return [''.join(state) for state in combined_transitions]
 
 
-def update_config(config_file: str, simulation_id: str, params: list[str,str], architecture: str) -> None:
+def update_config(config_file: str, simulation_id: str) -> None:
     """
     Update the SUMO configuration file to include an output-prefix with the given simulation ID.
     Adds the <output> section if it's missing, along with the necessary sub-elements.
@@ -66,45 +67,19 @@ def update_config(config_file: str, simulation_id: str, params: list[str,str], a
 
     # Ensure other necessary sub-elements are present
     # add_or_update_element(output_element, 'emission-output', 'emission-output.xml') # Really large file - no need for now
-    add_or_update_element(output_element, 'summary-output', 'summary.xml')
+    # add_or_update_element(output_element, 'summary-output', 'summary.xml')
     add_or_update_element(output_element, 'tripinfo-output', 'tripinfo-output.xml')
-    add_or_update_element(output_element, 'statistic-output', 'statistics.xml')
-
-    # <experiment_info>
-    #         <parameters>
-    #             <param key="HIDDEN_SIZE" value="64" />
-    #             <param key="LEARNING_RATE" value="1e-1" />
-    #             <param key="EPS_START" value="0.9" />
-    #             <param key="EPS_END" value="0.05" />
-    #             <param key="EPS_DECAY" value="1_000" />
-    #             <param key="BATCH_SIZE" value="128" />
-    #             <param key="GAMMA" value="0.80" />
-    #             <param key="TAU" value="0.005" />
-    #             <param key="MEM_SIZE" value="100_000" />
-    #             <param key="EPISODES" value="10" />
-    #         </parameters>
-    #         <architectures>
-    #             <architecture name="DQN" file="dqn.py" />
-    #         </architectures>
-    #     </experiment_info>
-    experiment_info_element = root.find('./experiment-info')
-    if experiment_info_element is None:
-        experiment_info_element = ET.SubElement(root, 'experiment-info')
-    parameter_element = ET.SubElement(experiment_info_element, 'parameters')
-    for key, value in params:
-        add_or_update_element(parameter_element, key, value)
-
-    architectures_element = ET.SubElement(experiment_info_element, 'architectures')
-    add_or_update_element(architectures_element, 'architecture', architecture)
+    # add_or_update_element(output_element, 'statistic-output', 'statistics.xml')
 
     # Save the updated XML back to the file
     tree.write(config_file, encoding='UTF-8', xml_declaration=True)
 
 
-def add_or_update_element(parent, tag, value):
+def add_or_update_element(parent, tag, value, key = None):
     """
     Add a new element or update an existing one within the parent element.
 
+    :param key: The key to set in the 'key' attribute.
     :param parent: The parent element.
     :param tag: The tag name of the element to add or update.
     :param value: The value to set in the 'value' attribute.
@@ -118,6 +93,8 @@ def add_or_update_element(parent, tag, value):
     if element is None:
         element = ET.SubElement(parent, tag)
     element.set('value', value)
+    if key:
+        element.set('key', key)
 
 
 def parse_summary_xml(file_path):
@@ -187,3 +164,37 @@ def parse_tripinfo_xml(file_path):
         return tripinfo_data
     except ET.ParseError as e:
         return f"Error parsing XML file: {e}"
+
+
+def append_to_tripinfo_sim_data(file_path: str, params: dict, architecture: str) -> None:
+    # Read the file content
+    with open(file_path, 'r') as file:
+        xml_content = file.read()
+
+    # Construct the XML data to insert
+    sim_details_element = ET.Element('simulation_details')
+    architecture_element = ET.SubElement(sim_details_element, 'architecture')
+    architecture_element.text = architecture
+    parameters_element = ET.SubElement(sim_details_element, 'parameters')
+    for key, value in params.items():
+        param_element = ET.SubElement(parameters_element, 'param', name=key)
+        param_element.text = str(value)
+    # Convert the new XML elements to a string
+    new_xml_data = ET.tostring(sim_details_element, encoding='unicode')
+
+    # Define the regex pattern to find the specific comment line
+    pattern = re.compile(r'<!-- generated on \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} by Eclipse SUMO sumo Version \d+\.\d+\.\d+')
+
+    # Use regex to find the position right after the comment line
+    match = pattern.search(xml_content)
+    if match:
+        insertion_point = match.end()
+
+        # Insert the new XML data into the file content
+        updated_xml_content = xml_content[:insertion_point] + '\n' + new_xml_data + '\n' + xml_content[insertion_point:]
+
+        # Write the updated content back to the file
+        with open(file_path, 'w') as file:
+            file.write(updated_xml_content)
+    else:
+        print("The specific comment line was not found in the XML.")

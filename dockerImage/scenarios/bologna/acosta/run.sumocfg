@@ -9,9 +9,7 @@
 
     <output>
         <tripinfo-output value="tripinfo-output.xml" />
-    <output-prefix value="5823bb06-4783-441d-a895-aa22fe0df44d" />
-    <summary-output value="summary.xml" />
-    <statistic-output value="statistics.xml" />
+        <output-prefix value="49f2c3c8-f9c1-4a07-9c91-9a91daa40b70" />
     </output>
 
     <report>
