@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, Union, Dict, Any
 from dockerImage.sumo_sim.utils import update_config
-
+from utils.misc import average_dict_of_dicts_values_by_key
 import traci
 
 from dockerImage.sumo_sim.utils import find_available_port, calculate_all_possible_transitions
@@ -28,7 +28,8 @@ def initialize_vehicles_in_tls(tls_ids_list):
 
 class Simulation:
 
-    def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False, params: dict = None, architecture: str = None):
+    def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False,
+                 params: dict = None, architecture: str = None):
         self.vehicles_in_tls = None
         self._conn = None
         self._traffic_lights_cache = None
@@ -319,14 +320,27 @@ class Simulation:
         tls_ids = self._get_tls_ids_list()
 
         def process_tls(t_id):
-            tls_statistics = self._get_tls_statistics(t_id)
-            tls_ids[t_id] = {'tls_data': {}, 'vehicle_data': {}}
-            ret = tls_ids[t_id]
-            tls_data = ret['tls_data']
+            tls_statistics = self.step_simulation(steps=0, tls_ids=t_id)
+            ret[t_id] = {'current_time': self.conn.simulation.getCurrentTime(), 'tls_data': {},
+                         'vehicle_data': {'average_speed': 0, 'max_wait_time': 0.0, 'min_wait_time': 0.0,
+                                          'occupancy': 0, 'queue_length': 0, 'total_cars': 0}}
+            data = ret[t_id]
+            tls_data = data['tls_data']
             tls_data['logics'] = self.conn.trafficlight.getAllProgramLogics(t_id)
-            tls_data['blocking_count'] = len(self.conn.trafficlight.getBlockingVehicles(t_id))
-            tls_data['phase_index'] = len(self.conn.trafficlight.getPhase(t_id))
-            tls_data['total_phase_duration'] = len(self.conn.trafficlight.getPhaseDuration(t_id))
+            used_program_id = self.conn.trafficlight.getProgram(t_id)
+            for logic in tls_data['logics']:
+                if logic.programID != used_program_id:
+                    continue
+                tls_data['logics'] = [{'state': phase.state, 'duration': phase.duration} for phase in logic.phases]
+                break
+            tls_data['current_phase_index'] = self.conn.trafficlight.getPhase(t_id)
+            vehicle_data = data['vehicle_data']
+            vehicles_in_tls = tls_statistics.get('vehicles_in_tls').get(t_id).get('longest_waiting_time_car_in_lane')
+            for key in vehicle_data:
+                vehicle_data[key] = average_dict_of_dicts_values_by_key(vehicles_in_tls, key)
+
+            ret[t_id] = data
 
         for tls_id in tls_ids:
             process_tls(tls_id)
+        return ret

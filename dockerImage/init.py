@@ -165,7 +165,7 @@ def switch_program(tls_id: str):
     if not sim:
         return "Session ID not found", 404
 
-    metrics = sim.switch_traffic_light_program(tls_id, new_program_id, make_step=make_step,forced=forced)
+    metrics = sim.switch_traffic_light_program(tls_id, new_program_id, make_step=make_step, forced=forced)
     if not metrics:
         return "Failed to switch logic", 500
 
@@ -220,6 +220,26 @@ def reset_simulation(session_id: str):
     return jsonify({
         'status': 'success'
     }), 200
+
+
+@app.route('/all_data/<session_id>', methods=['GET'])
+def get_all_data(session_id: str) -> Union[tuple[str, int], tuple[Response, int]]:
+    """
+    Get the traffic lights of the simulation
+    :return: JSON response
+    """
+    if not session_id:
+        return "No session ID provided", 400
+
+    if session_id not in simulations:
+        return "Session ID not found", 404
+
+    sim = simulations.get(session_id)
+
+    if sim is None:
+        return "Session ID not found", 404
+
+    return jsonify(sim.get_all_sim_data()), 200
 
 
 @app.route('/', methods=['GET'])

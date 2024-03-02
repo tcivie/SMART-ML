@@ -75,7 +75,7 @@ def update_config(config_file: str, simulation_id: str) -> None:
     tree.write(config_file, encoding='UTF-8', xml_declaration=True)
 
 
-def add_or_update_element(parent, tag, value, key = None):
+def add_or_update_element(parent, tag, value, key=None):
     """
     Add a new element or update an existing one within the parent element.
 
@@ -183,7 +183,8 @@ def append_to_tripinfo_sim_data(file_path: str, params: dict, architecture: str)
     new_xml_data = ET.tostring(sim_details_element, encoding='unicode')
 
     # Define the regex pattern to find the specific comment line
-    pattern = re.compile(r'<!-- generated on \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} by Eclipse SUMO sumo Version \d+\.\d+\.\d+')
+    pattern = re.compile(
+        r'<!-- generated on \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} by Eclipse SUMO sumo Version \d+\.\d+\.\d+')
 
     # Use regex to find the position right after the comment line
     match = pattern.search(xml_content)
@@ -198,3 +199,5 @@ def append_to_tripinfo_sim_data(file_path: str, params: dict, architecture: str)
             file.write(updated_xml_content)
     else:
         print("The specific comment line was not found in the XML.")
+
+
