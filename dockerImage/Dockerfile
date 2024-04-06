@@ -22,10 +22,7 @@ ENV SUMO_CONF_FILE run.sumocfg
 WORKDIR /app
 
 # Copy your Python script into the Docker image
-COPY init.py /app/init.py
-
-# Copy all sumo files into the Docker image
-COPY scenarios /app/scenarios
+COPY . /app
 
 # Expose a port if you need to access the SUMO environment from outside the container
 EXPOSE $PORT

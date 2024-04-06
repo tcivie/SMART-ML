@@ -1,10 +1,10 @@
 import uuid
-from typing import Optional, Union, Dict, Any
-from dockerImage.sumo_sim.utils import update_config
+from typing import Optional, Union, Any
+from sumo_sim.utils import update_config
 from utils.misc import average_dict_of_dicts_values_by_key
 import traci
 
-from dockerImage.sumo_sim.utils import find_available_port, calculate_all_possible_transitions
+from sumo_sim.utils import find_available_port, calculate_all_possible_transitions
 
 
 def initialize_vehicles_in_tls(tls_ids_list):

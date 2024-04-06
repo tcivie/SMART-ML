@@ -197,7 +197,7 @@ def create_sumo_additional_file(line_segments, file_name):
 #     ("line3", "red", [(3, 4), (6, 5)])
 # ]
 
-create_sumo_additional_file(line_segments, "../dockerImage/scenarios/bologna/acosta/lines_and_annotations.add.xml")
+create_sumo_additional_file(line_segments, "../scenarios/bologna/acosta/lines_and_annotations.add.xml")
 # import matplotlib.pyplot as plt
 #
 # # Example list of line segments as tuples
