@@ -3,8 +3,8 @@ from typing import Optional, Union, Any
 
 import traci
 
-from dockerImage.sumo_sim.utils import find_available_port, calculate_all_possible_transitions
-from dockerImage.sumo_sim.utils import update_config
+from sumo_sim.utils import find_available_port, calculate_all_possible_transitions
+from sumo_sim.utils import update_config
 from utils.misc import average_dict_of_dicts_values_by_key
 
 

@@ -7,3 +7,5 @@ services:
     environment:
       - PORT=8080
       - SUMO_CONF_FILE=/sumo-data/run.sumocfg
+    ports:
+        - "8080:8080"

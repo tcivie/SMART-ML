@@ -27,6 +27,9 @@ COPY init.py /app/init.py
 # Copy all sumo files into the Docker image
 COPY scenarios /app/scenarios
 
+COPY sumo_sim /app/sumo_sim
+COPY utils /app/utils
+
 # Expose a port if you need to access the SUMO environment from outside the container
 EXPOSE $PORT
 
