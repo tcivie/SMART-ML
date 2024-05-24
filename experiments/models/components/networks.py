@@ -28,6 +28,7 @@ class SimpleNetwork(nn.Module):
 
         # Output layer
         layers.append(nn.Linear(hidden_sizes[-1], action_size))
+        layers.append(nn.Sigmoid())
 
         self.layers = nn.ModuleList(layers)
 

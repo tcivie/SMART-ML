@@ -45,7 +45,7 @@ def set_traffic_light_phase(tls_id, session_id, make_step=1):
     """Sets the next traffic light phase for the given traffic light ID."""
     url = f'{BASE_URL}/traffic_lights/{tls_id}/phase'
     response = requests.post(url, json={'session_id': session_id, 'make_step': make_step}, headers=HEADERS)
-    return response.json()['simulation_metrics']
+    return response.json()
 
 
 def switch_traffic_light_program(tls_id, session_id, program_id, make_step=1, *, forced=False):
@@ -54,7 +54,7 @@ def switch_traffic_light_program(tls_id, session_id, program_id, make_step=1, *,
     response = requests.post(url, json={'session_id': session_id, 'program_id': program_id, 'make_step': make_step,
                                         'forced': forced}, headers=HEADERS)
     if response.ok:
-        return response.json()['simulation_metrics']
+        return response.json()
     return {}
 
 
