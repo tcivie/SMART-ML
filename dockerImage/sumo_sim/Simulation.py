@@ -26,16 +26,13 @@ def initialize_vehicles_in_tls(tls_ids_list):
 
 class Simulation:
 
-    def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False,
-                 params: dict = None, architecture: str = None):
+    def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
         self.vehicles_in_tls = None
         self._conn = None
         self._traffic_lights_cache = None
 
         self._config_path = config_path
         self._is_gui = is_gui
-        self.params = params
-        self.architecture = architecture
 
         self._port = port if port is not None else find_available_port()
         self._session_id = session_id if session_id is not None else str(uuid.uuid4())

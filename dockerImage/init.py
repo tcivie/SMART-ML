@@ -27,9 +27,7 @@ def start_simulation():
     if not config_path:
         return "No config path provided", 400
 
-    sim = Simulation(config_path, is_gui=is_gui,
-                     params=request_data.get('params', {}),
-                     architecture=request_data.get('architecture', 'default'))
+    sim = Simulation(config_path, is_gui=is_gui)
     if not sim.conn:
         return jsonify({
             'success': False,

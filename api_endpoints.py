@@ -11,11 +11,11 @@ HEADERS = {
 }
 
 
-def start_simulation(config_path, is_gui, params=None, architecture='default'):
+def start_simulation(config_path, is_gui):
     """Starts the simulation and returns the session ID."""
     url = f'{BASE_URL}/start'
-    response = requests.post(url, json={'config_path': config_path, 'is_gui': is_gui, 'params': params,
-                                        'architecture': architecture}, headers=HEADERS)
+    response = requests.post(url, json={'config_path': config_path, 'is_gui': is_gui},
+                             headers=HEADERS)
     return response.json().get('sessionId')
 
 
