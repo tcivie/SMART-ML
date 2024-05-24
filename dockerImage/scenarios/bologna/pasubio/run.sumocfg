@@ -8,7 +8,7 @@
     
     <output>
         <tripinfo-output value="tripinfo-output.xml" />
-    <output-prefix value="32eea5b2-b2de-4090-9432-80f6a0240c90" /></output>
+    <output-prefix value="dc168686-4e52-4281-bf87-64b901fab1dc" /></output>
     
     <report>
         <log value="sumo_log.txt" />
