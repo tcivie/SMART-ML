@@ -31,16 +31,16 @@ class SumoSingleTLSExperiment(Experiment):
 
     def get_selected_action_method(self, action) -> callable:
         if action == self.Action.STEP:
-            ret = lambda _: None
+            ret = lambda : None
         elif action == self.Action.NEXT_PHASE:
-            ret = lambda _: set_traffic_light_phase(self.tls_id, self.session_id,
+            ret = lambda : set_traffic_light_phase(self.tls_id, self.session_id,
                                                     make_step=0)  # Set next phase
         else:  # Switch Program
             selected_program_index = action - 2
             if selected_program_index >= len(self.selected_program_ids):
                 raise RuntimeError("Illegal action")
             selected_program = self.selected_program_ids[int(selected_program_index)]
-            ret = switch_traffic_light_program(tls_id=self.tls_id, session_id=self.session_id,
+            ret = lambda : switch_traffic_light_program(tls_id=self.tls_id, session_id=self.session_id,
                                                program_id=selected_program,
                                                make_step=0)
         return ret
@@ -78,8 +78,8 @@ class SumoSingleTLSExperiment(Experiment):
     def step(self, environment_state) -> callable:
         state_tensor, reward, is_ended = self.extract_state_tensor(environment_state)
         if is_ended:
-            return lambda: None
+            return None
         self.model.optimize_model()
-        selected_action = self.model.select_action(state_tensor)
+        selected_action = self.model.select_action(state_tensor, reward)
         return self.get_selected_action_method(selected_action)
 

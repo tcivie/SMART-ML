@@ -9,10 +9,11 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def select_action(self, old_state: torch.Tensor, current_state: torch.Tensor, reward) -> int:
-        pass
+    def select_action(self, current_state: torch.Tensor, reward) -> int:
+        raise NotImplementedError()
 
     @abstractmethod
     def optimize_model(self):
-        pass
+        raise NotImplementedError()
+
 

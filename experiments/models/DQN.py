@@ -19,9 +19,9 @@ Transition = namedtuple('Transition',
 @dataclass
 class Params:
     observations: int = 7
-    actions: int = 2
-    policy_net: SimpleNetwork = SimpleNetwork(7, 2, [64, 64])
-    target_net: SimpleNetwork = SimpleNetwork(7, 2, [64, 64])
+    actions: int = 3
+    policy_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
+    target_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
     optimizer: torch.optim.Optimizer = torch.optim.Adam
     memory: ReplayMemory = ReplayMemory(10000)
 
@@ -46,20 +46,20 @@ class DQN(BaseModel):
         self.optimizer = params.optimizer
         self.memory = params.memory
 
-    def select_action(self, old_state: torch.Tensor, current_state: torch.Tensor, reward) -> int:
+    def select_action(self, current_state: torch.Tensor, reward) -> int:
         sample = random.random()
         eps_threshold = self.params.EPS_END + (self.params.EPS_START - self.params.EPS_END) * np.exp(
             -1. * self.steps_done / self.params.EPS_DECAY)
         self.steps_done += 1
         if sample > eps_threshold:
             with torch.inference_mode():
-                action = self.policy_net(current_state.float()).max(1).indices.item()
-                self.memory.push(old_state, action, current_state, reward)
+                action = self.policy_net(current_state.float()).max(0).indices.item()
+                self.memory.push(action, current_state, reward)
                 return action
         else:
             # Randomly select an action and return as integer
             action = random.randrange(self.n_actions)
-            self.memory.push(old_state, action, current_state, reward)
+            self.memory.push(action, current_state, reward)
             return action
 
     def optimize_model(self):
