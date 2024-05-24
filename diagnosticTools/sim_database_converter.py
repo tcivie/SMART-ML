@@ -1,4 +1,4 @@
-from colabs.intro.api_endpoints import *
+from api_endpoints import *
 import json
 
 

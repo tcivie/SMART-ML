@@ -1,10 +1,11 @@
 import uuid
-from typing import Optional, Union, Dict, Any
-from dockerImage.sumo_sim.utils import update_config
-from utils.misc import average_dict_of_dicts_values_by_key
+from typing import Optional, Union, Any
+
 import traci
 
 from dockerImage.sumo_sim.utils import find_available_port, calculate_all_possible_transitions
+from dockerImage.sumo_sim.utils import update_config
+from utils.misc import average_dict_of_dicts_values_by_key
 
 
 def initialize_vehicles_in_tls(tls_ids_list):
@@ -23,21 +24,15 @@ def initialize_vehicles_in_tls(tls_ids_list):
     return vehicles_in_tls
 
 
-3
-
-
 class Simulation:
 
-    def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False,
-                 params: dict = None, architecture: str = None):
+    def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
         self.vehicles_in_tls = None
         self._conn = None
         self._traffic_lights_cache = None
 
         self._config_path = config_path
         self._is_gui = is_gui
-        self.params = params
-        self.architecture = architecture
 
         self._port = port if port is not None else find_available_port()
         self._session_id = session_id if session_id is not None else str(uuid.uuid4())

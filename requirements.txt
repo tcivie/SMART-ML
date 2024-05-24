@@ -2,3 +2,9 @@ sumolib==1.19.0
 traci==1.19.0
 flask==3.0.0
 requests==2.31.0
+numpy~=1.26.4
+torch~=2.2.2
+matplotlib~=3.9.0
+pandas~=2.2.2
+scikit-learn~=1.5.0
+keras~=3.3.3
