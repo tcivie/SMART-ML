@@ -95,9 +95,9 @@ if __name__ == '__main__':
             actions=4,
             # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
             policy_net=SimpleNetwork(7 * dim_size,
-                                     3, [7 * dim_size, 128, 64]),
+                                     3, [7 * dim_size, 7 * dim_size, 7 * dim_size]),
             target_net=SimpleNetwork(7 * dim_size,
-                                     3, [7 * dim_size, 128, 64])
+                                     3, [7 * dim_size, 7 * dim_size, 7 * dim_size])
         )
         , simulation_run_path,
         reward_functions.environmental_impact)
