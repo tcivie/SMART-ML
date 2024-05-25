@@ -23,7 +23,7 @@ agents = [SumoSingleTLSExperiment(simulation_id, tls_id,
                                   DQN(
                                       Params(
                                           observations=7 * len(state['vehicles_in_tls'][tls_id]['lanes']),
-                                          actions=3,
+                                          actions=4,
                                           policy_net=SimpleNetwork(7 * len(state['vehicles_in_tls'][tls_id]['lanes']),
                                                                    3, [64, 64]),
                                           target_net=SimpleNetwork(7 * len(state['vehicles_in_tls'][tls_id]['lanes']),
@@ -40,4 +40,4 @@ while True:
             call()
         else:
             break
-    state = step_simulation(simulation_id, 100)
+    state = step_simulation(simulation_id, 30)

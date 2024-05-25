@@ -165,7 +165,7 @@ def switch_program(tls_id: str):
 
     metrics = sim.switch_traffic_light_program(tls_id, new_program_id, make_step=make_step, forced=forced)
     if not metrics:
-        return "Failed to switch logic", 500
+        return "Failed to switch logic", 404
 
     if make_step:
         return jsonify({'status': 'success',

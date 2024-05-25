@@ -174,10 +174,11 @@ class Simulation:
         # Assuming that the string length of the phases is the same in both programs
         # Find the next possible legal phase in the new program
         current_phase_state = current_phases[current_index]['state']
-        next_possible_phases = calculate_all_possible_transitions(current_phase_state)
+        if not forced:
+            next_possible_phases = calculate_all_possible_transitions(current_phase_state)
 
         for i, phase in enumerate(new_phases):
-            if phase['state'] in next_possible_phases or forced:
+            if forced or phase['state'] in next_possible_phases :
                 self.conn.trafficlight.setProgram(tls_id, new_program_id)
                 self.conn.trafficlight.setPhase(tls_id, i)
                 if make_step > 0:
