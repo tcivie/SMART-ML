@@ -86,3 +86,15 @@ class SumoSingleTLSExperiment(Experiment):
         selected_action = self.model.select_action(state_tensor, reward)
         return self.get_selected_action_method(selected_action)
 
+    def __str__(self):
+        return f"""
+        <tr>
+            <td>{self.session_id}</td>
+            <td>{self.tls_id}</td>
+            <td>{self.model}</td>
+            <td>{self.selected_program_ids}</td>
+        </tr>
+        """
+
+    def __repr__(self):
+        return self.__str__()

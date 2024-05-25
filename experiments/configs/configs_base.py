@@ -83,6 +83,26 @@ class ConfigBase:
         self.log.summarize_run()
         self.log.convert_to_html()
 
+    def __str__(self):
+        agents_html = ''.join(
+            [f"<tr><td>{agent.session_id}</td><td>{agent.tls_id}</td><td>{agent.model.__class__.__name__}</td></tr>" for
+             agent in self.agents])
+        return f"""
+        <tr>
+            <td>{self.epochs}</td>
+            <td>{self.step_size}</td>
+            <td>{self.model.__name__}</td>
+            <td>{self.simulation_id}</td>
+            <td>{self.reward_func.__name__ if self.reward_func else 'None'}</td>
+            <td><table>{agents_html}</table></td>
+            <td>{self.log.__class__.__name__}</td>
+        </tr>
+        """
+
+    def __repr__(self):
+        return self.__str__()
+
+
 
 class ConfigLogging:
     def __init__(self, **kwargs):
@@ -138,7 +158,10 @@ class ConfigLogging:
         params = ET.SubElement(root, "Parameters")
         for key, value in self.kwargs.items():
             param = ET.SubElement(params, key)
-            param.text = str(value)
+            if isinstance(value, List):
+                param.text = str(value)[1:-2]
+            else:
+                param.text = str(value)
 
         results = ET.SubElement(root, "Results")
         for log in self.logs:
@@ -153,7 +176,7 @@ class ConfigLogging:
             total_steps.text = str(log['total_steps'])
 
         tree = ET.ElementTree(root)
-        tree.write(self.xml_file_path, encoding='utf-8', xml_declaration=True)
+        tree.write(self.xml_file_path, encoding='utf-8', xml_declaration=False)
 
         print(f'Summary written to {self.xml_file_path}')
 

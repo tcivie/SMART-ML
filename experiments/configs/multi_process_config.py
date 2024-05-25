@@ -52,19 +52,59 @@ if __name__ == '__main__':
 
     # List of arguments to pass to the function
     args1 = (
-        50, 30, DQN, SumoSingleTLSExperiment, params_func, simulation_run_path,
-        reward_functions.penalize_long_wait_times)
+        2, 30, DQN, SumoSingleTLSExperiment,
+        lambda dim_size: DQN.Params(
+        observations=7 * dim_size,
+        actions=4,
+        # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+        policy_net=SimpleNetwork(7 * dim_size,
+                                 3, [64, 64]),
+        target_net=SimpleNetwork(7 * dim_size,
+                                 3, [64, 64])
+    )
+        , simulation_run_path,
+        reward_functions.environmental_impact)
     args2 = (
-        50, 30, DQN, SumoSingleTLSExperiment, params_func, simulation_run_path, reward_functions.environmental_impact)
+        50, 30, DQN, SumoSingleTLSExperiment,
+        lambda dim_size: DQN.Params(
+            observations=7 * dim_size,
+            actions=4,
+            # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+            policy_net=SimpleNetwork(7 * dim_size,
+                                     3, [64, 64, 64]),
+            target_net=SimpleNetwork(7 * dim_size,
+                                     3, [64, 64, 64])
+        )
+        , simulation_run_path, reward_functions.environmental_impact)
     args3 = (
-        50, 30, DQN, SumoSingleTLSExperiment, params_func, simulation_run_path, reward_functions.speed_safety_balance)
+        50, 30, DQN, SumoSingleTLSExperiment,
+        lambda dim_size: DQN.Params(
+            observations=7 * dim_size,
+            actions=4,
+            # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+            policy_net=SimpleNetwork(7 * dim_size,
+                                     3, [64, 64, 64, 64]),
+            target_net=SimpleNetwork(7 * dim_size,
+                                     3, [64, 64, 64, 64])
+        )
+        , simulation_run_path, reward_functions.environmental_impact)
     args4 = (
-        50, 30, DQN, SumoSingleTLSExperiment, params_func, simulation_run_path,
-        reward_functions.even_traffic_distribution)
+        50, 30, DQN, SumoSingleTLSExperiment,
+        lambda dim_size: DQN.Params(
+            observations=7 * dim_size,
+            actions=4,
+            # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+            policy_net=SimpleNetwork(7 * dim_size,
+                                     3, [7 * dim_size, 128, 64]),
+            target_net=SimpleNetwork(7 * dim_size,
+                                     3, [7 * dim_size, 128, 64])
+        )
+        , simulation_run_path,
+        reward_functions.environmental_impact)
 
     arguments = [args1, args2, args3, args4]
-    # create_and_run_simulation(*args1)
-
+    create_and_run_simulation(*args1)
+    exit(1)
     # Create a list to hold the processes
     processes = []
 
