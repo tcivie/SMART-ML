@@ -63,7 +63,7 @@ def stop_simulation() -> Union[tuple[str, int], Response]:
     new_filename = f"{session_id}tripinfo-output.xml"
     new_file_path = output_path.with_name(new_filename)
 
-    append_to_tripinfo_sim_data(str(new_file_path), sim.params, sim.architecture)
+    # append_to_tripinfo_sim_data(str(new_file_path))
     # Send the file to the client
     return send_file(str(new_file_path), as_attachment=True)
 

@@ -1,5 +1,6 @@
 from abc import ABC
 from enum import Enum
+from typing import Callable
 
 import torch
 
@@ -16,7 +17,7 @@ class SumoSingleTLSExperiment(Experiment):
         NEXT_PHASE = 1
         SWITCH_PROGRAM = 2
 
-    def __init__(self, session_id: str, tls_id: str, model: BaseModel, reward_func=None):
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel, reward_func: Callable[[dict, int], torch.Tensor]=None):
         super().__init__(get_initial_data(session_id))
         if reward_func is None:
             self.reward_func = self.default_reward_func
@@ -84,3 +85,4 @@ class SumoSingleTLSExperiment(Experiment):
         self.model.optimize_model()
         selected_action = self.model.select_action(state_tensor, reward)
         return self.get_selected_action_method(selected_action)
+

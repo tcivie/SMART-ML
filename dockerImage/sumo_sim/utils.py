@@ -166,6 +166,7 @@ def parse_tripinfo_xml(file_path):
         return f"Error parsing XML file: {e}"
 
 
+@DeprecationWarning
 def append_to_tripinfo_sim_data(file_path: str, params: dict, architecture: str) -> None:
     # Read the file content
     with open(file_path, 'r') as file:

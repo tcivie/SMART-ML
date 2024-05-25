@@ -16,28 +16,26 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
 
-@dataclass
-class Params:
-    observations: int = 7
-    actions: int = 3
-    policy_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
-    target_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
-    optimizer: torch.optim.Optimizer = torch.optim.Adam
-    memory: ReplayMemory = ReplayMemory(10000)
-
-    EPS_START: float = 0.9
-    EPS_END: float = 0.05
-    EPS_DECAY: float = 200
-
-    GAMMA: float = 0.999
-    BATCH_SIZE: int = 128
-
-
 class DQN(BaseModel):
-    def __init__(self, params: Params):
-        super().__init__()
+    @dataclass
+    class Params(BaseModel.Params):
+        observations: int = 7
+        actions: int = 3
+        policy_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
+        target_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
+        optimizer: torch.optim.Optimizer = torch.optim.Adam
+        memory: ReplayMemory = ReplayMemory(10000)
+
+        EPS_START: float = 0.9
+        EPS_END: float = 0.05
+        EPS_DECAY: float = 200
+
+        GAMMA: float = 0.999
+        BATCH_SIZE: int = 128
+
+    def __init__(self, params: 'DQN.Params'):
+        super().__init__(params)
         self.steps_done = 0
-        self.params = params
         self.n_actions = params.actions
         self.policy_net = params.policy_net.to(device)
         self.target_net = params.target_net.to(device)
