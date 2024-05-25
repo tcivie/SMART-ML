@@ -103,8 +103,6 @@ if __name__ == '__main__':
         reward_functions.environmental_impact)
 
     arguments = [args1, args2, args3, args4]
-    create_and_run_simulation(*args1)
-    exit(1)
     # Create a list to hold the processes
     processes = []
 
