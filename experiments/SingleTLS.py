@@ -1,5 +1,6 @@
 from abc import ABC
 from enum import Enum
+from typing import Callable
 
 import torch
 
@@ -16,7 +17,7 @@ class SumoSingleTLSExperiment(Experiment):
         NEXT_PHASE = 1
         SWITCH_PROGRAM = 2
 
-    def __init__(self, session_id: str, tls_id: str, model: BaseModel, reward_func=None):
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel, reward_func: Callable[[dict, int], torch.Tensor]=None):
         super().__init__(get_initial_data(session_id))
         if reward_func is None:
             self.reward_func = self.default_reward_func
@@ -30,19 +31,19 @@ class SumoSingleTLSExperiment(Experiment):
         self.tls_data = self.get_tls_data(self.initial_data, tls_id)
 
     def get_selected_action_method(self, action) -> callable:
-        if action == self.Action.STEP:
-            ret = lambda : None
-        elif action == self.Action.NEXT_PHASE:
-            ret = lambda : set_traffic_light_phase(self.tls_id, self.session_id,
-                                                    make_step=0)  # Set next phase
+        if action == self.Action.STEP.value:
+            ret = lambda: None
+        elif action == self.Action.NEXT_PHASE.value:
+            ret = lambda: set_traffic_light_phase(self.tls_id, self.session_id,
+                                                  make_step=0)  # Set next phase
         else:  # Switch Program
-            selected_program_index = action - 2
+            selected_program_index = action - self.Action.SWITCH_PROGRAM.value
             if selected_program_index >= len(self.selected_program_ids):
                 raise RuntimeError("Illegal action")
             selected_program = self.selected_program_ids[int(selected_program_index)]
-            ret = lambda : switch_traffic_light_program(tls_id=self.tls_id, session_id=self.session_id,
-                                               program_id=selected_program,
-                                               make_step=0)
+            ret = lambda: switch_traffic_light_program(tls_id=self.tls_id, session_id=self.session_id,
+                                                       program_id=selected_program,
+                                                       make_step=0, forced=True)
         return ret
 
     def extract_state_tensor(self, response):
@@ -64,16 +65,18 @@ class SumoSingleTLSExperiment(Experiment):
 
     @staticmethod
     def default_reward_func(states: dict, cars_that_left: int) -> torch.Tensor:
-        penalty = cars_that_left * 10
+        # cars_that_left is basically the cars delta in the tls between the previous step and the current one
+        reward = cars_that_left
         for lane in states.values():
             if not lane:
+                reward += 10
                 continue
-            if lane.get('max_waiting_time', 0.) > 0:
-                queue_length_percentage = lane['queue_length'] / (lane['total_cars'] / lane['occupancy'])
-                penalty -= queue_length_percentage * lane['max_waiting_time']
+            if lane.get('max_wait_time', 0.) > 0:
+                # queue_length_percentage = lane['queue_length'] / (lane['total_cars'] / lane['occupancy'])
+                reward -= (lane['queue_length'] + lane['max_wait_time']*0.5)
             else:
-                penalty += lane['average_speed']
-        return torch.tensor(penalty, dtype=torch.float32, device=device)
+                reward += lane['average_speed']
+        return torch.tensor(reward, dtype=torch.float32, device=device)
 
     def step(self, environment_state) -> callable:
         state_tensor, reward, is_ended = self.extract_state_tensor(environment_state)
@@ -83,3 +86,15 @@ class SumoSingleTLSExperiment(Experiment):
         selected_action = self.model.select_action(state_tensor, reward)
         return self.get_selected_action_method(selected_action)
 
+    def __str__(self):
+        return f"""
+        <tr>
+            <td>{self.session_id}</td>
+            <td>{self.tls_id}</td>
+            <td>{self.model}</td>
+            <td>{self.selected_program_ids}</td>
+        </tr>
+        """
+
+    def __repr__(self):
+        return self.__str__()

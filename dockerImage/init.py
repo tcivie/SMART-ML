@@ -58,14 +58,17 @@ def stop_simulation() -> Union[tuple[str, int], Response]:
         return "Session ID not found", 404
     sim.close()
     simulations.pop(session_id)
+    return jsonify({
+        'success': True
+    })
 
-    output_path = Path(sim._output_path)
-    new_filename = f"{session_id}tripinfo-output.xml"
-    new_file_path = output_path.with_name(new_filename)
-
-    append_to_tripinfo_sim_data(str(new_file_path), sim.params, sim.architecture)
-    # Send the file to the client
-    return send_file(str(new_file_path), as_attachment=True)
+    # output_path = Path(sim._output_path)
+    # new_filename = f"{session_id}tripinfo-output.xml"
+    # new_file_path = output_path.with_name(new_filename)
+    #
+    # # append_to_tripinfo_sim_data(str(new_file_path))
+    # # Send the file to the client
+    # return send_file(str(new_file_path), as_attachment=True)
 
 
 @app.route('/traffic_lights', methods=['GET'])
@@ -165,7 +168,7 @@ def switch_program(tls_id: str):
 
     metrics = sim.switch_traffic_light_program(tls_id, new_program_id, make_step=make_step, forced=forced)
     if not metrics:
-        return "Failed to switch logic", 500
+        return "Failed to switch logic", 404
 
     if make_step:
         return jsonify({'status': 'success',

@@ -8,3 +8,5 @@ matplotlib~=3.9.0
 pandas~=2.2.2
 scikit-learn~=1.5.0
 keras~=3.3.3
+optree~=0.11.0
+lxml~=5.2.2

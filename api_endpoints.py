@@ -62,7 +62,8 @@ def step_simulation(session_id, steps=1, tls_ids=None):
     """Advances the simulation by the given number of steps."""
     url = f'{BASE_URL}/step'
     response = requests.post(url, json={'session_id': session_id, 'steps': steps, 'show_data_for_tls_ids': tls_ids},
-                             headers=HEADERS)
+                             headers=HEADERS
+                             )
     return response.json()['simulation_metrics']
 
 

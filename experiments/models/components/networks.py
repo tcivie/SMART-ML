@@ -36,3 +36,4 @@ class SimpleNetwork(nn.Module):
         for layer in self.layers[:-1]:
             state = F.relu(layer(state))
         return self.layers[-1](state)
+
