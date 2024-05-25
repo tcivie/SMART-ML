@@ -44,6 +44,12 @@ class DQN(BaseModel):
         self.optimizer = params.optimizer
         self.memory = params.memory
 
+    def __str__(self):
+        return f"DQN: {self.params}"
+
+    def __repr__(self):
+        return f"DQN: {self.params}"
+
     def select_action(self, current_state: torch.Tensor, reward) -> int:
         sample = random.random()
         eps_threshold = self.params.EPS_END + (self.params.EPS_START - self.params.EPS_END) * np.exp(
