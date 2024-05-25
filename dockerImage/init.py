@@ -4,8 +4,8 @@ import uuid
 from pathlib import Path
 from typing import Union, Any, Dict, Tuple
 from flask import Flask, request, jsonify, Response, send_file
-from dockerImage.sumo_sim.Simulation import Simulation
-from dockerImage.sumo_sim.utils import append_to_tripinfo_sim_data
+from sumo_sim.Simulation import Simulation
+from sumo_sim.utils import append_to_tripinfo_sim_data
 
 app = Flask(__name__)
 app.debug = False
