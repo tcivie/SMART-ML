@@ -46,38 +46,42 @@ def hidden_2(dim_size: int):
         target_net=SimpleNetwork(7 * dim_size,
                                  3, [64, 64])
     )
+
+
 def hidden_3(dim_size: int):
     return DQN.Params(
-            observations=7 * dim_size,
-            actions=4,
-            # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
-            policy_net=SimpleNetwork(7 * dim_size,
-                                     3, [64, 64, 64]),
-            target_net=SimpleNetwork(7 * dim_size,
-                                     3, [64, 64, 64])
-        )
+        observations=7 * dim_size,
+        actions=4,
+        # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+        policy_net=SimpleNetwork(7 * dim_size,
+                                 3, [64, 64, 64]),
+        target_net=SimpleNetwork(7 * dim_size,
+                                 3, [64, 64, 64])
+    )
+
 
 def hidden_4(dim_size: int):
     return DQN.Params(
-            observations=7 * dim_size,
-            actions=4,
-            # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
-            policy_net=SimpleNetwork(7 * dim_size,
-                                     3, [64, 64, 64, 64]),
-            target_net=SimpleNetwork(7 * dim_size,
-                                     3, [64, 64, 64, 64])
-        )
+        observations=7 * dim_size,
+        actions=4,
+        # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+        policy_net=SimpleNetwork(7 * dim_size,
+                                 3, [64, 64, 64, 64]),
+        target_net=SimpleNetwork(7 * dim_size,
+                                 3, [64, 64, 64, 64])
+    )
+
 
 def hidden_3_small(dim_size: int):
     return DQN.Params(
-            observations=7 * dim_size,
-            actions=4,
-            # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
-            policy_net=SimpleNetwork(7 * dim_size,
-                                     3, [7 * dim_size, 7 * dim_size, 7 * dim_size]),
-            target_net=SimpleNetwork(7 * dim_size,
-                                     3, [7 * dim_size, 7 * dim_size, 7 * dim_size])
-        )
+        observations=7 * dim_size,
+        actions=4,
+        # Step (1) + Next Phase (1) + Switch Program (Number of programs) (2) = 4
+        policy_net=SimpleNetwork(7 * dim_size,
+                                 3, [7 * dim_size, 7 * dim_size, 7 * dim_size]),
+        target_net=SimpleNetwork(7 * dim_size,
+                                 3, [7 * dim_size, 7 * dim_size, 7 * dim_size])
+    )
 
 
 if __name__ == '__main__':
