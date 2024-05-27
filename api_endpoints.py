@@ -3,6 +3,8 @@ import time
 
 import requests
 
+from sumo_sim.Simulation import LightPhase
+
 # Base URL of your Flask server
 BASE_URL = os.getenv('BASE_URL', 'http://127.0.0.1:8080')
 HEADERS = {
@@ -41,7 +43,7 @@ def get_traffic_lights(session_id):
     return response.json()
 
 
-def set_traffic_light_phase(tls_id, session_id, make_step=1):
+def set_traffic_light_next_phase(tls_id, session_id, make_step=1):
     """Sets the next traffic light phase for the given traffic light ID."""
     url = f'{BASE_URL}/traffic_lights/{tls_id}/phase'
     response = requests.post(url, json={'session_id': session_id, 'make_step': make_step}, headers=HEADERS)
@@ -78,6 +80,19 @@ def all_simulation_data(session_id):
     """Advances the simulation by the given number of steps."""
     url = f'{BASE_URL}/all_data/{session_id}'
     response = requests.get(url)
+    return response.json()
+
+
+def set_traffic_light_phase(tls_id: str, session_id: str, phase: list[LightPhase]):
+    """
+    Set the phase of a traffic light
+    :param tls_id: Traffic light ID
+    :param session_id: Session ID
+    :param phase: List of LightPhase objects
+    :return: If operation was successful
+    """
+    url = f'{BASE_URL}/traffic_lights/{tls_id}/set_phase'
+    response = requests.post(url, json={'session_id': session_id, 'phase': [p.value for p in phase]}, headers=HEADERS)
     return response.json()
 
 
