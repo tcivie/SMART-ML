@@ -104,7 +104,6 @@ class ConfigBase:
         return self.__str__()
 
 
-
 class ConfigLogging:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -113,9 +112,9 @@ class ConfigLogging:
         self.start_time = time.time()
 
         self.base_path = Path('results')
-        self.html_file_path = self.base_path / f'simulation_summary_{self.unique_id}.html'
-        self.xml_file_path = self.base_path / f'simulation_summary_{self.unique_id}.xml'
-        self.plot_file_path = self.base_path / f'plot_{self.unique_id}.png'
+        self.html_file_path = self.base_path / 'html' / f'simulation_summary_{self.unique_id}.html'
+        self.xml_file_path = self.base_path / 'xml' / f'simulation_summary_{self.unique_id}.xml'
+        self.plot_file_path = self.base_path / 'plot' / f'plot_{self.unique_id}.png'
 
     def __str__(self):
         return str(self.kwargs)
@@ -138,7 +137,8 @@ class ConfigLogging:
         return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
     def print_epoch(self, epoch: int, epochs: int, total_steps: int):
-        print(f'{self.get_formatted_time()}\t|[{self.unique_id}]| Epoch: [{epoch}/{epochs}]\t| total steps: {total_steps}')
+        print(
+            f'{self.get_formatted_time()}\t|[{self.unique_id}]| Epoch: [{epoch}/{epochs}]\t| total steps: {total_steps}')
 
     def format_time_elapsed(self, elapsed_time):
         hours, rem = divmod(elapsed_time, 3600)
