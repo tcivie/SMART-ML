@@ -8,6 +8,7 @@ from io import BytesIO
 from typing import Callable, Type
 import time
 from typing import Callable, Type
+from pathlib import Path
 
 import torch
 from matplotlib import pyplot as plt
@@ -106,12 +107,15 @@ class ConfigBase:
 
 class ConfigLogging:
     def __init__(self, **kwargs):
-        self.xml_file_path = None
-        self.html_file_path = None
         self.kwargs = kwargs
         self.logs = []
         self.unique_id = id(ConfigLogging)
         self.start_time = time.time()
+
+        self.base_path = Path('results')
+        self.html_file_path = self.base_path / f'simulation_summary_{self.unique_id}.html'
+        self.xml_file_path = self.base_path / f'simulation_summary_{self.unique_id}.xml'
+        self.plot_file_path = self.base_path / f'plot_{self.unique_id}.png'
 
     def __str__(self):
         return str(self.kwargs)
@@ -127,10 +131,8 @@ class ConfigLogging:
         plt.ylabel(ylabel)
         plt.grid(True)
         plt.tight_layout()
-        plot_file_path = f'plot_{self.unique_id}.png'
-        plt.savefig(plot_file_path)
+        plt.savefig(self.plot_file_path)
         plt.show()
-        self.plot_file_path = plot_file_path
 
     def get_formatted_time(self):
         return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
@@ -152,7 +154,6 @@ class ConfigLogging:
         })
 
     def summarize_run(self):
-        self.xml_file_path = 'simulation_summary_' + str(self.unique_id) + '.xml'
         root = ET.Element("SimulationSummary")
 
         params = ET.SubElement(root, "Parameters")
@@ -235,8 +236,6 @@ class ConfigLogging:
         xslt_doc = lxml_etree.XML(xslt)
         transform = lxml_etree.XSLT(xslt_doc)
         html_doc = transform(xml_doc)
-
-        self.html_file_path = 'simulation_summary_' + str(self.unique_id) + '.html'
 
         with open(self.html_file_path, 'wb') as f:
             f.write(lxml_etree.tostring(html_doc, pretty_print=True))
