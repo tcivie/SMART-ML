@@ -243,7 +243,7 @@ def get_all_data(session_id: str) -> Union[tuple[str, int], tuple[Response, int]
     return jsonify(sim.get_all_sim_data()), 200
 
 
-@app.route('/traffic_lights/<tls_id>/setPhase', methods=['POST'])
+@app.route('/traffic_lights/<tls_id>/set_phase', methods=['POST'])
 def set_phase(tls_id: str):
     """
     Set the phase of a traffic light
