@@ -4,5 +4,5 @@
 
 4 Experiments with 4 different configurations in the number of hidden layers
 With Adam optimizer and 4 actions
-50 epochs total with not so good results
+50 epochs total and 30 step size with not so good results
 All experiments used environmental_impact as the reward function

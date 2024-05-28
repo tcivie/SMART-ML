@@ -200,7 +200,10 @@ def step_simulation():
     if str(steps).isdigit():
         steps = int(steps)
 
-    metrics = sim.step_simulation(steps=steps, tls_ids=tls_ids)
+    if steps < 1:
+        metrics = sim.get_overall_simulation_data(tls_ids=tls_ids)
+    else:
+        metrics = sim.step_simulation(steps=steps, tls_ids=tls_ids)
     return jsonify({
         'status': 'success',
         'simulation_metrics': metrics

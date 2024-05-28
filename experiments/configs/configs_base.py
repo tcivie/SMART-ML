@@ -29,7 +29,7 @@ class ConfigBase:
                  step_size: int,
                  model_class: Type[BaseModel],
                  experiment_class,
-                 model_params_func: Callable[[int], BaseModel.Params],
+                 model_params_func: Callable[[object, str], BaseModel.Params],
                  simulation_run_path: str = 'bologna/acosta/run.sumocfg',
                  reward_func: Callable[[dict, int], torch.Tensor] = None, *, is_gui=False
                  ):
@@ -43,9 +43,10 @@ class ConfigBase:
         self.state = step_simulation(self.simulation_id, 0)
 
         self.agents = [
-            experiment_class(self.simulation_id, tls_id,
+            experiment_class(self.simulation_id,
+                             tls_id,
                              model=self.model(
-                                 model_params_func(len(self.state['vehicles_in_tls'][tls_id]['lanes']))
+                                 model_params_func(self.state, tls_id)
                              ),
                              reward_func=self.reward_func
                              ) for tls_id in self.state['vehicles_in_tls']]

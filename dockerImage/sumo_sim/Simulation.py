@@ -279,6 +279,18 @@ class Simulation:
             'is_ended': self.conn.simulation.getMinExpectedNumber() == 0
         }
 
+    def get_overall_simulation_data(self, tls_ids=None):
+        """
+        Get the overall simulation data
+        :param tls_ids: List of TLS IDs to get data for
+        :return: Overall simulation data
+        """
+        default_data = self.step_simulation(steps=0, tls_ids=tls_ids)
+        default_data['num_controlled_links'] = {}
+        for tls_id in default_data['vehicles_in_tls'].keys():
+            default_data['num_controlled_links'][tls_id] = len(self.conn.trafficlight.getControlledLinks(tls_id))
+        return default_data
+
     def _get_tls_statistics(self, tls_ids):
         # Check Diff for self.vehicles_in_tls
         last_vehicles_in_tls = 0

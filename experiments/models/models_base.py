@@ -14,7 +14,7 @@ class BaseModel(ABC):
         self.params = params
 
     @abstractmethod
-    def select_action(self, current_state: torch.Tensor, reward) -> int:
+    def select_action(self, current_state: torch.Tensor, reward):
         raise NotImplementedError()
 
     @abstractmethod
