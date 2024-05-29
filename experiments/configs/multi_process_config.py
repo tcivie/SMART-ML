@@ -5,6 +5,7 @@ from multiprocessing import freeze_support
 from typing import Callable, Type
 
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from experiments.SingleTLS import SumoSingleTLSExperiment, SumoSingleTLSExperimentUncontrolledPhase
 from experiments.configs import reward_functions
@@ -22,15 +23,30 @@ def create_and_run_simulation(epochs: int,
                               experiment_class,
                               model_params_func: Callable[[object, str], BaseModel.Params],
                               simulation_run_path: str = 'bologna/acosta/run.sumocfg',
-                              reward_func: Callable[[dict, int], torch.Tensor] = None, *, is_gui=True):
+                              reward_func: Callable[[dict, int], torch.Tensor] = None, *, is_gui=False):
+    writer = SummaryWriter(
+        comment=f'{model_class.__name__}_{experiment_class.__name__}_{model_params_func.__name__}_{reward_func.__name__}'
+    )
+    writer.add_text('model_class', model_class.__name__)
+    writer.add_text('experiment_class', experiment_class.__name__)
+    writer.add_text('model_params_func', model_params_func.__name__)
+    writer.add_text('reward_func', reward_func.__name__)
+
+    writer.add_text('total_epochs', str(epochs))
+    writer.add_text('step_size', str(step_size))
+    writer.add_text('simulation_run_path', simulation_run_path)
+    writer.add_text('is_gui', str(is_gui))
+
     sim = ConfigBase(epochs,
                      step_size,
                      model_class,
                      experiment_class,
+                     writer,
                      model_params_func,
                      simulation_run_path,
                      reward_func, is_gui=is_gui)
     sim.run_till_end()
+    writer.close()
 
 
 simulation_run_path = 'bologna/acosta/run.sumocfg'
@@ -94,8 +110,8 @@ simulation_run_path = 'bologna/acosta/run.sumocfg'
 def hidden_2x2(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase), [[128, 128, 64], [128, 64, 128]], 1)
-    target_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase), [[128, 128, 64], [128, 64, 128]], 1)
+    policy_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase), [[64, 32, 64], [32, 16, 32]], 1)
+    target_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase), [[64, 32, 64], [32, 16, 32]], 1)
     return SplitDQN.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -109,10 +125,13 @@ if __name__ == '__main__':
 
     # List of arguments to pass to the function
     args1 = (
-        50, 10, SplitDQN, SumoSingleTLSExperimentUncontrolledPhase,
+        3,
+        50,
+        SplitDQN,
+        SumoSingleTLSExperimentUncontrolledPhase,
         hidden_2x2,
         simulation_run_path,
-        reward_functions.environmental_impact)
+        reward_functions.even_traffic_distribution)
     # args2 = (
     #     50, 30, DQN, SumoSingleTLSExperiment,
     #     hidden_3,

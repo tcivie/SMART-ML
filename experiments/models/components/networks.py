@@ -80,6 +80,8 @@ class SplitNetwork(nn.Module):
         self.first_network = SimpleNetwork(state_size, 1, hidden_sizes[0])
         self.first_network.set_intermediate_layer_to_extract(feed_layer_index)
         self.second_network = SimpleNetwork(hidden_sizes[0][feed_layer_index], action_size, hidden_sizes[1])
+        # Remove the sigmoid layer from the second network
+        self.second_network.layers = self.second_network.layers[:-1]
         # Final layers for each controlled link with len(LightPhase) outputs
         self.final_layers = nn.ModuleList([
             nn.Sequential(
