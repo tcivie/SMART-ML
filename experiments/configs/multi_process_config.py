@@ -125,8 +125,8 @@ if __name__ == '__main__':
 
     # List of arguments to pass to the function
     args1 = (
-        3,
-        50,
+        20,
+        10,
         SplitDQN,
         SumoSingleTLSExperimentUncontrolledPhase,
         hidden_2x2,

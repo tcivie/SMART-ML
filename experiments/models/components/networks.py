@@ -42,7 +42,7 @@ class SimpleNetwork(nn.Module):
         # Output layer
         layers.append(nn.Linear(hidden_sizes[-1], action_size))
         layers.append(nn.Sigmoid())
-        return nn.ModuleList(layers)
+        return nn.Sequential(*layers)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         for index, layer in enumerate(self.layers[:-1]):

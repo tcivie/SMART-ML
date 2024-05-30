@@ -17,15 +17,19 @@ def penalize_long_wait_times(states: dict, cars_that_left: int) -> torch.Tensor:
     return torch.tensor(reward, dtype=torch.float32, device=device)
 
 
+def less_penalties_more_rewards_for_cars_that_left(states: dict, cars_that_left: int) -> torch.Tensor:
+
+
+
 def even_traffic_distribution(states: dict, cars_that_left: int) -> torch.Tensor:
-    reward = cars_that_left * 3  # Base reward for cars that left
+    reward = cars_that_left * 10  # Base reward for cars that left
     total_cars = sum(lane.get('total_cars', 0) for lane in states.values())
     num_lanes = len(states)
     avg_cars_per_lane = total_cars / num_lanes if num_lanes else 0
 
     for lane in states.values():
         if not lane:
-            reward += 5
+            reward += 1
             continue
         cars_in_lane = lane.get('total_cars', 0)
         deviation = abs(cars_in_lane - avg_cars_per_lane)

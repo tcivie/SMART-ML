@@ -45,6 +45,7 @@ class ConfigBase:
         self.writer.add_text('simulation_id', self.simulation_id)
 
         self.epochs = epochs
+        self.total_steps = 0
         self.step_size = step_size
 
         reset_simulation(self.simulation_id)
@@ -117,7 +118,8 @@ class ConfigBase:
                 if not ended:
                     state = step_simulation(simulation_id, step_size)
                     step += step_size
-                self.log_state_to_tensorboard(state, step)
+                    self.total_steps += step_size
+                self.log_state_to_tensorboard(state, self.total_steps)
 
             self.log.print_epoch(epoch, epochs, step)
             self.writer.add_scalar('SimulationMetrics/TotalSteps', step, epoch)
