@@ -114,13 +114,9 @@ class SumoSingleTLSExperimentUncontrolledPhase(SumoSingleTLSExperiment):
 
     @overrides
     def get_selected_action_method(self, action) -> callable:
-        if isinstance(action, int):
-            if action == self.Action.STEP.value:
-                ret = lambda: None
-            else:
-                raise RuntimeError("Illegal action")
-        elif isinstance(action, list) and all(
-                [isinstance(x, LightPhase) for x in action]):  # TODO: Could be redundant check
+        if isinstance(action, (int, float)):
+            ret = lambda: None
+        elif isinstance(action, list):
             ret = lambda: set_traffic_light_phase(self.tls_id, self.session_id, action)
         else:
             raise RuntimeError("Illegal action")
