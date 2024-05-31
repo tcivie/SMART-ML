@@ -1,6 +1,6 @@
 from abc import ABC
 from enum import Enum
-from typing import Callable
+from typing import Callable, Iterable
 
 import torch
 from overrides import overrides
