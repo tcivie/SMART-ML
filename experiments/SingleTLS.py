@@ -3,12 +3,14 @@ from enum import Enum
 from typing import Callable
 
 import torch
+from overrides import overrides
 
-from api_endpoints import get_initial_data, set_traffic_light_phase, switch_traffic_light_program
+from api_endpoints import get_initial_data, set_traffic_light_next_phase, switch_traffic_light_program, \
+    set_traffic_light_phase
 from experiments import device
 from experiments.experiments_base import Experiment
-from experiments.models.DQN import DQN
 from experiments.models.models_base import BaseModel
+from sumo_sim.Simulation import LightPhase
 
 
 class SumoSingleTLSExperiment(Experiment):
@@ -17,7 +19,8 @@ class SumoSingleTLSExperiment(Experiment):
         NEXT_PHASE = 1
         SWITCH_PROGRAM = 2
 
-    def __init__(self, session_id: str, tls_id: str, model: BaseModel, reward_func: Callable[[dict, int], torch.Tensor]=None):
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel,
+                 reward_func: Callable[[dict, int], torch.Tensor] = None):
         super().__init__(get_initial_data(session_id))
         if reward_func is None:
             self.reward_func = self.default_reward_func
@@ -34,8 +37,8 @@ class SumoSingleTLSExperiment(Experiment):
         if action == self.Action.STEP.value:
             ret = lambda: None
         elif action == self.Action.NEXT_PHASE.value:
-            ret = lambda: set_traffic_light_phase(self.tls_id, self.session_id,
-                                                  make_step=0)  # Set next phase
+            ret = lambda: set_traffic_light_next_phase(self.tls_id, self.session_id,
+                                                       make_step=0)  # Set next phase
         else:  # Switch Program
             selected_program_index = action - self.Action.SWITCH_PROGRAM.value
             if selected_program_index >= len(self.selected_program_ids):
@@ -73,7 +76,7 @@ class SumoSingleTLSExperiment(Experiment):
                 continue
             if lane.get('max_wait_time', 0.) > 0:
                 # queue_length_percentage = lane['queue_length'] / (lane['total_cars'] / lane['occupancy'])
-                reward -= (lane['queue_length'] + lane['max_wait_time']*0.5)
+                reward -= (lane['queue_length'] + lane['max_wait_time'] * 0.5)
             else:
                 reward += lane['average_speed']
         return torch.tensor(reward, dtype=torch.float32, device=device)
@@ -86,15 +89,39 @@ class SumoSingleTLSExperiment(Experiment):
         selected_action = self.model.select_action(state_tensor, reward)
         return self.get_selected_action_method(selected_action)
 
-    def __str__(self):
-        return f"""
-        <tr>
-            <td>{self.session_id}</td>
-            <td>{self.tls_id}</td>
-            <td>{self.model}</td>
-            <td>{self.selected_program_ids}</td>
-        </tr>
-        """
 
-    def __repr__(self):
-        return self.__str__()
+class SumoSingleTLSExperimentUncontrolledPhase(SumoSingleTLSExperiment):
+    class Action(Enum):
+        STEP = 0
+        CHANGE_PHASE = 1
+
+    """
+    This class is used to simulate a SumoSingleTLSExperiment where the phase is not controlled by the user. Meaning
+    that the phases can change to any state from any state. For example, if in :class:`SumoSingleTLSExperiment` the
+    phase is 0, the next phase can be 1, 2, 3 but not 4, 5, 6 due to checks.
+
+    In this class, the next phase that would be returned from a single tls would be list of all lights x phases (
+    :class:`LightPhase`) For example if we have simulation single tls which has 4 lights, the number of phases that
+    are expected to be returned from the model would be (4*8) = 32. single list with values for each light:[(0-7),
+    (0-7), (0-7), (0-7)]
+
+    FYI this class handles only one tls.
+    """
+
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel,
+                 reward_func: Callable[[dict, int], torch.Tensor] = None):
+        super().__init__(session_id, tls_id, model, reward_func)
+
+    @overrides
+    def get_selected_action_method(self, action) -> callable:
+        if isinstance(action, int):
+            if action == self.Action.STEP.value:
+                ret = lambda: None
+            else:
+                raise RuntimeError("Illegal action")
+        elif isinstance(action, list) and all(
+                [isinstance(x, LightPhase) for x in action]):  # TODO: Could be redundant check
+            ret = lambda: set_traffic_light_phase(self.tls_id, self.session_id, action)
+        else:
+            raise RuntimeError("Illegal action")
+        return ret

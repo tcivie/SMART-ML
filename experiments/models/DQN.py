@@ -2,15 +2,18 @@ import abc
 import random
 from collections import namedtuple
 from dataclasses import dataclass
+from typing import Union
 
 import numpy as np
 import torch.optim
+from overrides import overrides
 from torch import nn
 
 from experiments import device
 from experiments.models.components.memory import ReplayMemory
 from experiments.models.components.networks import SimpleNetwork
 from experiments.models.models_base import BaseModel
+from sumo_sim.Simulation import LightPhase
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -20,9 +23,8 @@ class DQN(BaseModel):
     @dataclass
     class Params(BaseModel.Params):
         observations: int = 7
-        actions: int = 3
-        policy_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
-        target_net: SimpleNetwork = SimpleNetwork(observations, actions, [64, 64])
+        policy_net: nn.Module = SimpleNetwork(7, 3, [64, 64])
+        target_net: nn.Module = SimpleNetwork(7, 3, [64, 64])
         optimizer: torch.optim.Optimizer = torch.optim.Adam
         memory: ReplayMemory = ReplayMemory(10000)
 
@@ -32,11 +34,12 @@ class DQN(BaseModel):
 
         GAMMA: float = 0.999
         BATCH_SIZE: int = 128
+        TARGET_UPDATE: int = 10
 
     def __init__(self, params: 'DQN.Params'):
         super().__init__(params)
         self.steps_done = 0
-        self.n_actions = params.actions
+        self.actions = params.policy_net.action_size
         self.policy_net = params.policy_net.to(device)
         self.target_net = params.target_net.to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -50,7 +53,7 @@ class DQN(BaseModel):
     def __repr__(self):
         return f"DQN: {self.params}"
 
-    def select_action(self, current_state: torch.Tensor, reward) -> int:
+    def select_action(self, current_state: torch.Tensor, reward):
         sample = random.random()
         eps_threshold = self.params.EPS_END + (self.params.EPS_START - self.params.EPS_END) * np.exp(
             -1. * self.steps_done / self.params.EPS_DECAY)
@@ -62,13 +65,17 @@ class DQN(BaseModel):
                 return action
         else:
             # Randomly select an action and return as integer
-            action = random.randrange(self.n_actions)
+            action = random.randrange(self.actions)
             self.memory.push(action, current_state, reward)
             return action
 
     def optimize_model(self):
         if len(self.memory) < self.params.BATCH_SIZE:
             return 0
+
+        if self.steps_done % self.params.TARGET_UPDATE == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+
         transitions = self.memory.sample(self.params.BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
@@ -112,3 +119,35 @@ class DQN(BaseModel):
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1000)
         self.optimizer.step()
         return loss
+
+
+class SplitDQN(DQN):
+    @dataclass
+    class Params(DQN.Params):
+        num_of_controlled_links: int = 1
+
+    def __init__(self, params: 'SplitDQN.Params'):
+        super().__init__(params)
+        self.num_of_controlled_links = params.num_of_controlled_links
+
+    @overrides
+    def select_action(self, current_state: torch.Tensor, reward):
+        sample = random.random()
+        eps_threshold = self.params.EPS_END + (self.params.EPS_START - self.params.EPS_END) * np.exp(
+            -1. * self.steps_done / self.params.EPS_DECAY)
+        self.steps_done += 1
+        if sample > eps_threshold:
+            with torch.inference_mode():
+                action = self.policy_net(current_state.float())
+                action = [LightPhase(a.item()) for a in action]
+                self.memory.push(action, current_state, reward)
+                return action
+        else:
+            # Randomly select an action and return as integer
+            if random.random() < 0.5:  # Skip action and return 0
+                self.memory.push(0, current_state, reward)
+                return 0
+            else:
+                action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
+                self.memory.push(action, current_state, reward)
+                return action

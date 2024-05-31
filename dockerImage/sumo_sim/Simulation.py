@@ -1,4 +1,5 @@
 import uuid
+from enum import Enum
 from typing import Optional, Union, Any
 
 import traci
@@ -6,6 +7,34 @@ import traci
 from sumo_sim.utils import find_available_port, calculate_all_possible_transitions
 from sumo_sim.utils import update_config
 from utils.misc import average_dict_of_dicts_values_by_key
+
+lights_definitions = {
+    'r': 0,
+    'u': 1,
+    'g': 2,
+    'G': 3,
+    'y': 4,
+    'Y': 5,
+    'o': 6,
+    'O': 7,
+}
+
+# Create a reverse mapping for quick lookup
+reverse_lights_definitions = {v: k for k, v in lights_definitions.items()}
+
+
+class LightPhase(Enum):
+    RED = 0
+    RED_YELLOW = 1
+    GREEN = 2
+    GREEN_BLINKING = 3
+    YELLOW = 4
+    YELLOW_BLINKING = 5
+    OFF = 6
+    OFF_BLINKING = 7
+
+    def __str__(self):
+        return reverse_lights_definitions[self.value]
 
 
 def initialize_vehicles_in_tls(tls_ids_list):
@@ -178,7 +207,7 @@ class Simulation:
             next_possible_phases = calculate_all_possible_transitions(current_phase_state)
 
         for i, phase in enumerate(new_phases):
-            if forced or phase['state'] in next_possible_phases :
+            if forced or phase['state'] in next_possible_phases:
                 self.conn.trafficlight.setProgram(tls_id, new_program_id)
                 self.conn.trafficlight.setPhase(tls_id, i)
                 if make_step > 0:
@@ -249,6 +278,18 @@ class Simulation:
             'cars_that_left': cars_that_left,
             'is_ended': self.conn.simulation.getMinExpectedNumber() == 0
         }
+
+    def get_overall_simulation_data(self, tls_ids=None):
+        """
+        Get the overall simulation data
+        :param tls_ids: List of TLS IDs to get data for
+        :return: Overall simulation data
+        """
+        default_data = self.step_simulation(steps=0, tls_ids=tls_ids)
+        default_data['num_controlled_links'] = {}
+        for tls_id in default_data['vehicles_in_tls'].keys():
+            default_data['num_controlled_links'][tls_id] = len(self.conn.trafficlight.getControlledLinks(tls_id))
+        return default_data
 
     def _get_tls_statistics(self, tls_ids):
         # Check Diff for self.vehicles_in_tls
@@ -340,3 +381,22 @@ class Simulation:
         for tls_id in tls_ids:
             process_tls(tls_id)
         return ret
+
+    def set_tls_to_state(self, tls_id: str, state: list[LightPhase]) -> bool:
+        """
+        Sets the traffic light to the specified state.
+        :param tls_id: Traffic light system ID.
+        :param state: List of state numbers.
+        :return: None
+        """
+        try:
+            # Convert the list of state numbers to their corresponding color strings
+            state_string = ''.join([str(state_num) for state_num in state])
+
+            # Set the traffic light state
+            self.conn.trafficlight.setRedYellowGreenState(tls_id, state_string)
+
+            return True
+        except Exception as e:
+            print(f"An error occurred while setting the TLS state: {e}")
+            return False

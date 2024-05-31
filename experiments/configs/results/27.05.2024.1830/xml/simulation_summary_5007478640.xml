@@ -1,0 +1,579 @@
+<SimulationSummary>
+    <Parameters>
+        <model>&lt;class 'experiments.models.DQN.DQN'&gt;</model>
+        <reward_func>&lt;function environmental_impact at 0x12f4cbb80&gt;</reward_func>
+        <simulation_id>6d49e00f-a5d1-44b5-afab-cfabc0993945</simulation_id>
+        <epochs>50</epochs>
+        <step_size>30</step_size>
+        <state>{'cars_that_left': 0, 'delta_cars_in_tls': 0, 'is_ended': False, 'vehicles_in_tls': {'209': {'lanes':
+            {'153_0': [], '187_0': [], '188_0': [], '189[1][1]_0': [], '88_0': []}, 'longest_waiting_time_car_in_lane':
+            {'153_0': {}, '187_0': {}, '188_0': {}, '189[1][1]_0': {}, '88_0': {}}, 'total': 0}, '210': {'lanes':
+            {'113_0': [], '113_1': [], '113_2': [], '117_0': [], '31_0': [], '31_1': [], '31_2': [], '34_0': [], '34_1':
+            [], '34_2': [], '43[0]_2': [], '43[1]_0': [], '43[1]_1': [], '43[1]_2': [], '46_0': [], '46_1': [], '46_2':
+            []}, 'longest_waiting_time_car_in_lane': {'113_0': {}, '113_1': {}, '113_2': {}, '117_0': {}, '31_0': {},
+            '31_1': {}, '31_2': {}, '34_0': {}, '34_1': {}, '34_2': {}, '43[0]_2': {}, '43[1]_0': {}, '43[1]_1': {},
+            '43[1]_2': {}, '46_0': {}, '46_1': {}, '46_2': {}}, 'total': 0}, '219': {'lanes': {'11_0': [], '11_1': [],
+            '11_2': [], '12_0': [], '12_1': [], '12_2': [], '71_0': [], '71_1': [], '71_2': [], '85_0': [], '85_1': [],
+            '85_2': []}, 'longest_waiting_time_car_in_lane': {'11_0': {}, '11_1': {}, '11_2': {}, '12_0': {}, '12_1':
+            {}, '12_2': {}, '71_0': {}, '71_1': {}, '71_2': {}, '85_0': {}, '85_1': {}, '85_2': {}}, 'total': 0}, '220':
+            {'lanes': {'171_0': [], '18_0': [], '18_1': [], '191_0': [], '69_0': [], '69_1': [], '72[0]_1': [],
+            '72[0]_2': [], '72[1]_0': [], '72[1]_1': []}, 'longest_waiting_time_car_in_lane': {'171_0': {}, '18_0': {},
+            '18_1': {}, '191_0': {}, '69_0': {}, '69_1': {}, '72[0]_1': {}, '72[0]_2': {}, '72[1]_0': {}, '72[1]_1':
+            {}}, 'total': 0}, '221': {'lanes': {'1_0': [], '1_1': [], '1b_0': [], '1b_1': [], '201_0': [], '201_1': [],
+            '201_2': [], '201c_0': [], '201c_1': [], '201c_2': [], '203[1]_0': [], '203[1]_1': [], '203[1]_2': [],
+            '203[1]b_0': [], '203[1]b_1': [], '203[1]b_2': [], '2_0': [], '2_1': [], '2_2': [], '4_0': []},
+            'longest_waiting_time_car_in_lane': {'1_0': {}, '1_1': {}, '1b_0': {}, '1b_1': {}, '201_0': {}, '201_1': {},
+            '201_2': {}, '201c_0': {}, '201c_1': {}, '201c_2': {}, '203[1]_0': {}, '203[1]_1': {}, '203[1]_2': {},
+            '203[1]b_0': {}, '203[1]b_1': {}, '203[1]b_2': {}, '2_0': {}, '2_1': {}, '2_2': {}, '4_0': {}}, 'total': 0},
+            '235': {'lanes': {'121_0': [], '124_0': [], '124_1': [], '125_0': [], '125_1': [], '203[0]_0': [],
+            '203[0]_1': [], '203[0]_2': [], '204[1][0]_0': [], '204[1][0]_1': [], '204a[0]_0': [], '204a[0]_1': [],
+            '204a[0]_2': [], '55b_0': [], '55b_1': [], '55b_2': []}, 'longest_waiting_time_car_in_lane': {'121_0': {},
+            '124_0': {}, '124_1': {}, '125_0': {}, '125_1': {}, '203[0]_0': {}, '203[0]_1': {}, '203[0]_2': {},
+            '204[1][0]_0': {}, '204[1][0]_1': {}, '204a[0]_0': {}, '204a[0]_1': {}, '204a[0]_2': {}, '55b_0': {},
+            '55b_1': {}, '55b_2': {}}, 'total': 0}, '273': {'lanes': {'103_0': [], '103_1': [], '104_0': [], '104_1':
+            [], '15_0': []}, 'longest_waiting_time_car_in_lane': {'103_0': {}, '103_1': {}, '104_0': {}, '104_1': {},
+            '15_0': {}}, 'total': 0}}}
+        </state>
+        <agents>
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;209&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=35, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=35, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=35, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+            ,
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;210&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=119, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=119, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=119, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+            ,
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;219&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=84, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=84, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=84, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+            ,
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;220&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=70, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=70, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=70, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+            ,
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;221&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=140, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=140, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=140, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+            ,
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;235&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=112, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=112, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=112, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+            ,
+            &lt;tr&gt;
+            &lt;td&gt;6d49e00f-a5d1-44b5-afab-cfabc0993945&lt;/td&gt;
+            &lt;td&gt;273&lt;/td&gt;
+            &lt;td&gt;DQN: DQN.Params(observations=35, actions=4, policy_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=35, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), target_net=SimpleNetwork(
+            (layers): ModuleList(
+            (0): Linear(in_features=35, out_features=64, bias=True)
+            (1-3): 3 x Linear(in_features=64, out_features=64, bias=True)
+            (4): Linear(in_features=64, out_features=3, bias=True)
+            (5): Sigmoid()
+            )
+            ), optimizer=Adam (
+            Parameter Group 0
+            amsgrad: False
+            betas: (0.9, 0.999)
+            capturable: False
+            differentiable: False
+            eps: 1e-08
+            foreach: None
+            fused: None
+            lr: 0.001
+            maximize: False
+            weight_decay: 0
+            ), memory=&lt;experiments.models.components.memory.ReplayMemory object at 0x12f4b4f40&gt;, EPS_START=0.9,
+            EPS_END=0.05, EPS_DECAY=200, GAMMA=0.999, BATCH_SIZE=128)&lt;/td&gt;
+            &lt;td&gt;['0', 'utopia']&lt;/td&gt;
+            &lt;/tr&gt;
+        </agents>
+    </Parameters>
+    <Results>
+        <Result>
+            <TimeStamp>2024-05-27 18:03:18</TimeStamp>
+            <TimeElapsed>00:00:30</TimeElapsed>
+            <Epoch>0</Epoch>
+            <TotalSteps>7680</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:03:55</TimeStamp>
+            <TimeElapsed>00:01:08</TimeElapsed>
+            <Epoch>1</Epoch>
+            <TotalSteps>8220</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:04:37</TimeStamp>
+            <TimeElapsed>00:01:50</TimeElapsed>
+            <Epoch>2</Epoch>
+            <TotalSteps>9540</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:05:23</TimeStamp>
+            <TimeElapsed>00:02:36</TimeElapsed>
+            <Epoch>3</Epoch>
+            <TotalSteps>9600</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:06:19</TimeStamp>
+            <TimeElapsed>00:03:32</TimeElapsed>
+            <Epoch>4</Epoch>
+            <TotalSteps>11040</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:07:28</TimeStamp>
+            <TimeElapsed>00:04:40</TimeElapsed>
+            <Epoch>5</Epoch>
+            <TotalSteps>12690</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:08:29</TimeStamp>
+            <TimeElapsed>00:05:42</TimeElapsed>
+            <Epoch>6</Epoch>
+            <TotalSteps>9690</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:09:44</TimeStamp>
+            <TimeElapsed>00:06:56</TimeElapsed>
+            <Epoch>7</Epoch>
+            <TotalSteps>12540</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:10:34</TimeStamp>
+            <TimeElapsed>00:07:47</TimeElapsed>
+            <Epoch>8</Epoch>
+            <TotalSteps>9450</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:11:28</TimeStamp>
+            <TimeElapsed>00:08:40</TimeElapsed>
+            <Epoch>9</Epoch>
+            <TotalSteps>9270</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:12:37</TimeStamp>
+            <TimeElapsed>00:09:50</TimeElapsed>
+            <Epoch>10</Epoch>
+            <TotalSteps>11520</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:13:35</TimeStamp>
+            <TimeElapsed>00:10:47</TimeElapsed>
+            <Epoch>11</Epoch>
+            <TotalSteps>11010</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:14:52</TimeStamp>
+            <TimeElapsed>00:12:04</TimeElapsed>
+            <Epoch>12</Epoch>
+            <TotalSteps>14100</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:15:55</TimeStamp>
+            <TimeElapsed>00:13:07</TimeElapsed>
+            <Epoch>13</Epoch>
+            <TotalSteps>9900</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:16:55</TimeStamp>
+            <TimeElapsed>00:14:08</TimeElapsed>
+            <Epoch>14</Epoch>
+            <TotalSteps>11460</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:17:54</TimeStamp>
+            <TimeElapsed>00:15:07</TimeElapsed>
+            <Epoch>15</Epoch>
+            <TotalSteps>9930</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:19:15</TimeStamp>
+            <TimeElapsed>00:16:27</TimeElapsed>
+            <Epoch>16</Epoch>
+            <TotalSteps>11010</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:20:08</TimeStamp>
+            <TimeElapsed>00:17:20</TimeElapsed>
+            <Epoch>17</Epoch>
+            <TotalSteps>10260</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:20:58</TimeStamp>
+            <TimeElapsed>00:18:10</TimeElapsed>
+            <Epoch>18</Epoch>
+            <TotalSteps>8700</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:22:14</TimeStamp>
+            <TimeElapsed>00:19:26</TimeElapsed>
+            <Epoch>19</Epoch>
+            <TotalSteps>12720</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:23:30</TimeStamp>
+            <TimeElapsed>00:20:42</TimeElapsed>
+            <Epoch>20</Epoch>
+            <TotalSteps>11790</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:24:49</TimeStamp>
+            <TimeElapsed>00:22:02</TimeElapsed>
+            <Epoch>21</Epoch>
+            <TotalSteps>12450</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:26:10</TimeStamp>
+            <TimeElapsed>00:23:22</TimeElapsed>
+            <Epoch>22</Epoch>
+            <TotalSteps>12150</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:27:10</TimeStamp>
+            <TimeElapsed>00:24:22</TimeElapsed>
+            <Epoch>23</Epoch>
+            <TotalSteps>9840</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:27:55</TimeStamp>
+            <TimeElapsed>00:25:07</TimeElapsed>
+            <Epoch>24</Epoch>
+            <TotalSteps>8490</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:28:55</TimeStamp>
+            <TimeElapsed>00:26:08</TimeElapsed>
+            <Epoch>25</Epoch>
+            <TotalSteps>9480</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:30:05</TimeStamp>
+            <TimeElapsed>00:27:18</TimeElapsed>
+            <Epoch>26</Epoch>
+            <TotalSteps>11520</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:31:06</TimeStamp>
+            <TimeElapsed>00:28:18</TimeElapsed>
+            <Epoch>27</Epoch>
+            <TotalSteps>10290</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:32:09</TimeStamp>
+            <TimeElapsed>00:29:22</TimeElapsed>
+            <Epoch>28</Epoch>
+            <TotalSteps>9420</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:33:23</TimeStamp>
+            <TimeElapsed>00:30:36</TimeElapsed>
+            <Epoch>29</Epoch>
+            <TotalSteps>12240</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:34:37</TimeStamp>
+            <TimeElapsed>00:31:49</TimeElapsed>
+            <Epoch>30</Epoch>
+            <TotalSteps>12210</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:35:47</TimeStamp>
+            <TimeElapsed>00:33:00</TimeElapsed>
+            <Epoch>31</Epoch>
+            <TotalSteps>11910</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:36:59</TimeStamp>
+            <TimeElapsed>00:34:11</TimeElapsed>
+            <Epoch>32</Epoch>
+            <TotalSteps>11400</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:38:14</TimeStamp>
+            <TimeElapsed>00:35:26</TimeElapsed>
+            <Epoch>33</Epoch>
+            <TotalSteps>10860</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:39:05</TimeStamp>
+            <TimeElapsed>00:36:17</TimeElapsed>
+            <Epoch>34</Epoch>
+            <TotalSteps>9090</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:40:40</TimeStamp>
+            <TimeElapsed>00:37:53</TimeElapsed>
+            <Epoch>35</Epoch>
+            <TotalSteps>15120</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:41:33</TimeStamp>
+            <TimeElapsed>00:38:45</TimeElapsed>
+            <Epoch>36</Epoch>
+            <TotalSteps>9720</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:42:20</TimeStamp>
+            <TimeElapsed>00:39:32</TimeElapsed>
+            <Epoch>37</Epoch>
+            <TotalSteps>8760</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:42:59</TimeStamp>
+            <TimeElapsed>00:40:11</TimeElapsed>
+            <Epoch>38</Epoch>
+            <TotalSteps>8400</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:44:23</TimeStamp>
+            <TimeElapsed>00:41:35</TimeElapsed>
+            <Epoch>39</Epoch>
+            <TotalSteps>12660</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:45:10</TimeStamp>
+            <TimeElapsed>00:42:22</TimeElapsed>
+            <Epoch>40</Epoch>
+            <TotalSteps>13650</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:45:35</TimeStamp>
+            <TimeElapsed>00:42:48</TimeElapsed>
+            <Epoch>41</Epoch>
+            <TotalSteps>8970</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:46:07</TimeStamp>
+            <TimeElapsed>00:43:19</TimeElapsed>
+            <Epoch>42</Epoch>
+            <TotalSteps>9780</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:46:29</TimeStamp>
+            <TimeElapsed>00:43:41</TimeElapsed>
+            <Epoch>43</Epoch>
+            <TotalSteps>8250</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:47:17</TimeStamp>
+            <TimeElapsed>00:44:30</TimeElapsed>
+            <Epoch>44</Epoch>
+            <TotalSteps>12390</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:47:44</TimeStamp>
+            <TimeElapsed>00:44:57</TimeElapsed>
+            <Epoch>45</Epoch>
+            <TotalSteps>9840</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:48:03</TimeStamp>
+            <TimeElapsed>00:45:16</TimeElapsed>
+            <Epoch>46</Epoch>
+            <TotalSteps>7140</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:48:42</TimeStamp>
+            <TimeElapsed>00:45:54</TimeElapsed>
+            <Epoch>47</Epoch>
+            <TotalSteps>13500</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:49:07</TimeStamp>
+            <TimeElapsed>00:46:20</TimeElapsed>
+            <Epoch>48</Epoch>
+            <TotalSteps>9030</TotalSteps>
+        </Result>
+        <Result>
+            <TimeStamp>2024-05-27 18:49:38</TimeStamp>
+            <TimeElapsed>00:46:51</TimeElapsed>
+            <Epoch>49</Epoch>
+            <TotalSteps>10260</TotalSteps>
+        </Result>
+    </Results>
+</SimulationSummary>

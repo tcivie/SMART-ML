@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 from typing import Union, Any, Dict, Tuple
 from flask import Flask, request, jsonify, Response, send_file
-from sumo_sim.Simulation import Simulation
+from sumo_sim.Simulation import Simulation, LightPhase
 from sumo_sim.utils import append_to_tripinfo_sim_data
 
 app = Flask(__name__)
@@ -200,7 +200,10 @@ def step_simulation():
     if str(steps).isdigit():
         steps = int(steps)
 
-    metrics = sim.step_simulation(steps=steps, tls_ids=tls_ids)
+    if steps < 1:
+        metrics = sim.get_overall_simulation_data(tls_ids=tls_ids)
+    else:
+        metrics = sim.step_simulation(steps=steps, tls_ids=tls_ids)
     return jsonify({
         'status': 'success',
         'simulation_metrics': metrics
@@ -241,6 +244,36 @@ def get_all_data(session_id: str) -> Union[tuple[str, int], tuple[Response, int]
         return "Session ID not found", 404
 
     return jsonify(sim.get_all_sim_data()), 200
+
+
+@app.route('/traffic_lights/<tls_id>/set_phase', methods=['POST'])
+def set_phase(tls_id: str):
+    """
+    Set the phase of a traffic light
+    :param tls_id: Traffic light ID
+    :return:
+    """
+    request_data = request.get_json()
+    session_id = request_data.get('session_id')
+    new_phase = request_data.get('phase')
+
+    if not session_id:
+        return "No session ID provided", 400
+
+    sim = simulations.get(session_id)
+    if not sim:
+        return "Session ID not found", 404
+
+    # Parse phase to list of LightPhase
+    new_phase = [LightPhase(phase_id) for phase_id in new_phase]
+
+    success = sim.set_tls_to_state(tls_id, new_phase)
+
+    if not success:
+        return "Traffic light not found or phase update failed", 404
+
+    return jsonify({'status': 'success'
+                    }), 200
 
 
 @app.route('/', methods=['GET'])
