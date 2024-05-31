@@ -34,6 +34,7 @@ class DQN(BaseModel):
 
         GAMMA: float = 0.999
         BATCH_SIZE: int = 128
+        TARGET_UPDATE: int = 10
 
     def __init__(self, params: 'DQN.Params'):
         super().__init__(params)
@@ -71,6 +72,10 @@ class DQN(BaseModel):
     def optimize_model(self):
         if len(self.memory) < self.params.BATCH_SIZE:
             return 0
+
+        if self.steps_done % self.params.TARGET_UPDATE == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+
         transitions = self.memory.sample(self.params.BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions

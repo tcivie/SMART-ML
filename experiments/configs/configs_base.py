@@ -69,31 +69,57 @@ class ConfigBase:
         self.log = ConfigLogging(**vars(self))
 
     def log_state_to_tensorboard(self, state: dict, step: int = 0):
-
         self.writer.add_scalar('SimulationMetrics/CarsThatLeft', state.get('cars_that_left', 0), step)
         self.writer.add_scalar('SimulationMetrics/DeltaCarsInTLS', state.get('delta_cars_in_tls', 0), step)
 
-        for tls_id in state.get('vehicles_in_tls', {}):
-            tls = state['vehicles_in_tls'][tls_id]
+        aggregated_data = {}
+
+        for tls_id, tls in state.get('vehicles_in_tls', {}).items():
             car_metrics = tls.get('longest_waiting_time_car_in_lane', {})
 
-            self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCars', tls.get('total', 0), step)
+            if tls_id not in aggregated_data:
+                aggregated_data[tls_id] = {
+                    'total_cars': 0,
+                    'average_speed_sum': 0,
+                    'max_wait_time_sum': 0,
+                    'min_wait_time_sum': 0,
+                    'occupancy_sum': 0,
+                    'queue_length_sum': 0,
+                    'total_cars_sum': 0,
+                    'total_co2_emission_sum': 0,
+                    'lanes_count': 0
+                }
 
-            for lane in car_metrics:
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/AverageSpeed',
-                                       car_metrics[lane].get('average_speed', 0), step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/MaxWaitingTime',
-                                       car_metrics[lane].get('max_wait_time', 0), step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/MinWaitingTime',
-                                       car_metrics[lane].get('min_wait_time', 0), step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/Occupancy',
-                                       car_metrics[lane].get('occupancy', 0), step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/QueueLength',
-                                       car_metrics[lane].get('queue_length', 0), step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/TotalCars',
-                                       car_metrics[lane].get('total_cars', 0), step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/{lane}/TotalCO2Emission',
-                                       car_metrics[lane].get('total_co2_emission', 0), step)
+            aggregated_data[tls_id]['total_cars'] += tls.get('total', 0)
+
+            for lane, metrics in car_metrics.items():
+                aggregated_data[tls_id]['average_speed_sum'] += metrics.get('average_speed', 0) * 3.6  # Convert to km/h
+                aggregated_data[tls_id]['max_wait_time_sum'] += metrics.get('max_wait_time', 0)
+                aggregated_data[tls_id]['min_wait_time_sum'] += metrics.get('min_wait_time', 0)
+                aggregated_data[tls_id]['occupancy_sum'] += metrics.get('occupancy', 0)
+                aggregated_data[tls_id]['queue_length_sum'] += metrics.get('queue_length', 0)
+                aggregated_data[tls_id]['total_cars_sum'] += metrics.get('total_cars', 0)
+                aggregated_data[tls_id]['total_co2_emission_sum'] += metrics.get('total_co2_emission', 0)
+                aggregated_data[tls_id]['lanes_count'] += 1
+
+        for tls_id, metrics in aggregated_data.items():
+            lanes_count = metrics['lanes_count']
+            self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCars', metrics['total_cars'], step)
+            if lanes_count > 0:
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/AverageSpeed',
+                                       metrics['average_speed_sum'] / lanes_count, step)
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/MaxWaitingTime',
+                                       metrics['max_wait_time_sum'] / lanes_count, step)
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/MinWaitingTime',
+                                       metrics['min_wait_time_sum'] / lanes_count, step)
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/Occupancy', metrics['occupancy_sum'] / lanes_count,
+                                       step)
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/QueueLength',
+                                       metrics['queue_length_sum'] / lanes_count, step)
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCarsSum',
+                                       metrics['total_cars_sum'] / lanes_count, step)
+                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCO2Emission',
+                                       metrics['total_co2_emission_sum'] / lanes_count, step)
 
     def run_till_end(self):
         state = self.state
@@ -139,7 +165,6 @@ class ConfigLogging:
         self.unique_id = id(ConfigLogging)
         self.start_time = time.time()
 
-
     def get_formatted_time(self):
         return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -151,4 +176,3 @@ class ConfigLogging:
         hours, rem = divmod(elapsed_time, 3600)
         minutes, seconds = divmod(rem, 60)
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-

@@ -17,27 +17,25 @@ def penalize_long_wait_times(states: dict, cars_that_left: int) -> torch.Tensor:
     return torch.tensor(reward, dtype=torch.float32, device=device)
 
 
-def less_penalties_more_rewards_for_cars_that_left(states: dict, cars_that_left: int) -> torch.Tensor:
-
-
-
-def even_traffic_distribution(states: dict, cars_that_left: int) -> torch.Tensor:
-    reward = cars_that_left * 10  # Base reward for cars that left
-    total_cars = sum(lane.get('total_cars', 0) for lane in states.values())
-    num_lanes = len(states)
-    avg_cars_per_lane = total_cars / num_lanes if num_lanes else 0
+def smooth_traffic_flow(states: dict, cars_that_left: int) -> torch.Tensor:
+    desired_speed = 30  # Desired speed in km/h
+    reward = cars_that_left * 10  # High base reward for cars that left
 
     for lane in states.values():
         if not lane:
-            reward += 1
+            # No cars in the lane, continue without changing the reward
             continue
-        cars_in_lane = lane.get('total_cars', 0)
-        deviation = abs(cars_in_lane - avg_cars_per_lane)
-        reward -= deviation  # Penalize deviation from average
+
+        avg_speed_m_s = lane.get('average_speed', 0)
+        avg_speed_kmh = avg_speed_m_s * 3.6  # Convert speed from m/s to km/h
+        speed_diff = abs(desired_speed - avg_speed_kmh)
+        reward -= speed_diff * 2  # Penalty for deviation from desired speed
+
         if lane.get('max_wait_time', 0.) > 0:
-            reward -= (lane['queue_length'] + lane['max_wait_time'] * 0.5)
+            reward -= (lane['queue_length'] + lane['max_wait_time'] * 0.3)  # Penalty for long wait times
         else:
-            reward += lane['average_speed'] * 1.2  # Moderate reward for speed
+            reward += avg_speed_kmh * 1.8  # Reward for maintaining higher average speed
+
     return torch.tensor(reward, dtype=torch.float32, device=device)
 
 

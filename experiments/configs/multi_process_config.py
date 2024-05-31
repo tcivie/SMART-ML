@@ -12,6 +12,7 @@ from experiments.configs import reward_functions
 from experiments.configs.configs_base import ConfigBase
 
 from experiments.models.DQN import DQN, SplitDQN
+from experiments.models.components.memory import ReplayMemory
 from experiments.models.components.networks import SimpleNetwork, SplitNetwork
 from experiments.models.models_base import BaseModel
 from sumo_sim.Simulation import LightPhase
@@ -107,6 +108,21 @@ simulation_run_path = 'bologna/acosta/run.sumocfg'
 #         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
 #     )
 
+
+# @dataclass
+#     class Params(BaseModel.Params):
+#         observations: int = 7
+#         policy_net: nn.Module = SimpleNetwork(7, 3, [64, 64])
+#         target_net: nn.Module = SimpleNetwork(7, 3, [64, 64])
+#         optimizer: torch.optim.Optimizer = torch.optim.Adam
+#         memory: ReplayMemory = ReplayMemory(10000)
+#
+#         EPS_START: float = 0.9
+#         EPS_END: float = 0.05
+#         EPS_DECAY: float = 200
+#
+#         GAMMA: float = 0.999
+#         BATCH_SIZE: int = 128
 def hidden_2x2(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
@@ -117,7 +133,15 @@ def hidden_2x2(state, tls_id: str):
         policy_net=policy_net,
         target_net=target_net,
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-        num_of_controlled_links=num_controlled_links
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(100_000),
+        EPS_START=0.9,
+        EPS_END=0.05,
+        EPS_DECAY=200,
+        GAMMA=0.999,
+        BATCH_SIZE=64,
+        TARGET_UPDATE=10
     )
 
 
@@ -131,7 +155,7 @@ if __name__ == '__main__':
         SumoSingleTLSExperimentUncontrolledPhase,
         hidden_2x2,
         simulation_run_path,
-        reward_functions.even_traffic_distribution)
+        reward_functions.smooth_traffic_flow)
     # args2 = (
     #     50, 30, DQN, SumoSingleTLSExperiment,
     #     hidden_3,
