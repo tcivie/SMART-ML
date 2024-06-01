@@ -139,7 +139,10 @@ class SplitDQN(DQN):
         if sample > eps_threshold:
             with torch.inference_mode():
                 action = self.policy_net(current_state.float())
-                action = [LightPhase(a.item()) for a in action]
+                if len(action) != 1:
+                    action = [LightPhase(a.item()) for a in action]
+                else:
+                    action = round(action.item())
                 self.memory.push(action, current_state, reward)
                 return action
         else:

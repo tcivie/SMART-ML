@@ -114,7 +114,7 @@ class SumoSingleTLSExperimentUncontrolledPhase(SumoSingleTLSExperiment):
 
     @overrides
     def get_selected_action_method(self, action) -> callable:
-        if isinstance(action, (int, float)):
+        if isinstance(action, (int, float)) and action == self.Action.STEP.value:
             ret = lambda: None
         elif isinstance(action, list):
             ret = lambda: set_traffic_light_phase(self.tls_id, self.session_id, action)

@@ -41,7 +41,9 @@ class SimpleNetwork(nn.Module):
             layers.append(nn.Linear(hidden_sizes[i - 1], hidden_sizes[i]))
         # Output layer
         layers.append(nn.Linear(hidden_sizes[-1], action_size))
-        layers.append(nn.Sigmoid())
+        layers.append(nn.ReLU())
+        if action_size > 1:
+            layers.append(nn.Softmax(dim=0))
         return nn.Sequential(*layers)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
@@ -49,7 +51,7 @@ class SimpleNetwork(nn.Module):
             state = layer(state)
             if self.intermediate_layer_index is not None and index == self.intermediate_layer_index:
                 self.intermediate_layer_results = state
-            state = F.relu(state)
+            # state = F.relu(state)
         return self.layers[-1](state)
 
 
@@ -86,7 +88,8 @@ class SplitNetwork(nn.Module):
         self.final_layers = nn.ModuleList([
             nn.Sequential(
                 nn.Linear(action_size, len(LightPhase)),
-                nn.Sigmoid()
+                nn.ReLU(),
+                nn.Softmax(dim=0)
             ) for _ in range(action_size // len(LightPhase))
         ])
 
@@ -101,7 +104,10 @@ class SplitNetwork(nn.Module):
         else:
             assert self.first_network.intermediate_layer_results is not None, "Intermediate layer results must be set"
             second_output = self.second_network(self.first_network.intermediate_layer_results)
-            final_outputs = [layer(second_output) for layer in self.final_layers]
+            final_outputs = []
+            for layer in self.final_layers:
+                final_outputs.append(layer(second_output))
+            # final_outputs = [layer(second_output) for layer in self.final_layers]
             final_outputs = torch.stack(final_outputs, dim=0)
             _, action_indices = final_outputs.max(dim=1)
             return action_indices

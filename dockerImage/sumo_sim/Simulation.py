@@ -15,8 +15,8 @@ lights_definitions = {
     'G': 3,
     'y': 4,
     'Y': 5,
-    'o': 6,
-    'O': 7,
+    # 'o': 6,
+    # 'O': 7,
 }
 
 # Create a reverse mapping for quick lookup
@@ -30,8 +30,9 @@ class LightPhase(Enum):
     GREEN_BLINKING = 3
     YELLOW = 4
     YELLOW_BLINKING = 5
-    OFF = 6
-    OFF_BLINKING = 7
+
+    # OFF = 6
+    # OFF_BLINKING = 7
 
     def __str__(self):
         return reverse_lights_definitions[self.value]
