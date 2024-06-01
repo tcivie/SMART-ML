@@ -28,10 +28,10 @@ def create_and_run_simulation(epochs: int,
     writer = SummaryWriter(
         comment=f'{model_class.__name__}_{experiment_class.__name__}_{model_params_func.__name__}_{reward_func.__name__}'
     )
-    writer.add_text('model_class', model_class.__name__)
-    writer.add_text('experiment_class', experiment_class.__name__)
-    writer.add_text('model_params_func', model_params_func.__name__)
-    writer.add_text('reward_func', reward_func.__name__)
+    writer.add_text('model_class', str(model_class))
+    writer.add_text('experiment_class', str(experiment_class))
+    writer.add_text('model_params_func', str(model_params_func))
+    writer.add_text('reward_func', str(reward_func))
 
     writer.add_text('total_epochs', str(epochs))
     writer.add_text('step_size', str(step_size))
@@ -46,6 +46,7 @@ def create_and_run_simulation(epochs: int,
                      model_params_func,
                      simulation_run_path,
                      reward_func, is_gui=is_gui)
+    writer.add_text('config', str(sim))
     sim.run_till_end()
     writer.close()
 
@@ -126,22 +127,24 @@ simulation_run_path = 'bologna/acosta/run.sumocfg'
 def hidden_2x2(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase), [[64, 32, 64], [32, 16, 32]], 1)
-    target_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase), [[64, 32, 64], [32, 16, 32]], 1)
+    policy_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase),
+                              [[256, 128, 128, 64], [128, 64, 32]], 2)
+    target_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase),
+                              [[256, 128, 128, 64], [128, 64, 32]], 2)
     return SplitDQN.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
         target_net=target_net,
-        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.1),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(100_000),
+        memory=ReplayMemory(20_000),
         EPS_START=0.9,
         EPS_END=0.05,
-        EPS_DECAY=200,
-        GAMMA=0.999,
-        BATCH_SIZE=64,
-        TARGET_UPDATE=10
+        EPS_DECAY=100_000,
+        GAMMA=0.9,
+        BATCH_SIZE=2_048,
+        TARGET_UPDATE=20_000
     )
 
 
@@ -150,12 +153,12 @@ if __name__ == '__main__':
     # List of arguments to pass to the function
     args1 = (
         20,
-        10,
+        5,
         SplitDQN,
         SumoSingleTLSExperimentUncontrolledPhase,
         hidden_2x2,
         simulation_run_path,
-        reward_functions.smooth_traffic_flow)
+        reward_functions.occupancy_is_bad)
     # args2 = (
     #     50, 30, DQN, SumoSingleTLSExperiment,
     #     hidden_3,

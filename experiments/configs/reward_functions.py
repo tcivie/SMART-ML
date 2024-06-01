@@ -65,3 +65,37 @@ def speed_safety_balance(states: dict, cars_that_left: int) -> torch.Tensor:
         else:
             reward += lane['average_speed'] * 1.5  # Higher reward for maintaining speed
     return torch.tensor(reward, dtype=torch.float32, device=device)
+
+
+def more_cars_that_left(states: dict, cars_that_left: int) -> torch.Tensor:
+    reward = cars_that_left ** 2
+    for lane in states.values():
+        if not lane:
+            continue
+        if lane.get('max_wait_time', 0.) > 0:
+            reward -= ((lane['queue_length'] + 1) * (lane['max_wait_time'] + 1)) ** 2
+        else:
+            reward += lane['average_speed'] * 1.5
+    return torch.tensor(reward, dtype=torch.float32, device=device)
+
+
+def occupancy_is_bad(states: dict, cars_that_left: int) -> torch.Tensor:
+    reward = cars_that_left * 5
+    for lane in states.values():
+        if lane.get('queue_length', 0) > 0:
+            reward -= exponential_percentage(lane.get('occupancy', 0), base=10)
+    return torch.tensor(reward, dtype=torch.float32, device=device)
+
+
+def exponential_percentage(x, base):
+    if x == 0:
+        return 0
+    # Ensure x is within the range 0 to 1
+    if not (0 <= x <= 1):
+        raise ValueError("Input percentage must be between 0 and 1 inclusive.")
+
+    # Ensure base is greater than 1
+    if base <= 1:
+        raise ValueError("Base must be greater than 1.")
+
+    return base ** (10 * x)

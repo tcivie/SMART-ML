@@ -68,6 +68,20 @@ class ConfigBase:
         self.writer.add_graph(agent_policy_net, example_input)
         self.log = ConfigLogging(**vars(self))
 
+    def __str__(self):
+        return (f"ConfigBase(\n"
+                f"  epochs={self.epochs},\n"
+                f"  step_size={self.step_size},\n"
+                f"  model_class={self.model.__name__},\n"
+                f"  simulation_id={self.simulation_id},\n"
+                f"  reward_func={'defined' if self.reward_func else 'undefined'},\n"
+                f"  agents_count={len(self.agents)},\n"
+                f"  agents={str(self.agents)},\n"
+                f"  total_steps={self.total_steps},\n"
+                f"  state={self.state}\n"
+                f")")
+
+
     def log_state_to_tensorboard(self, state: dict, step: int = 0):
         self.writer.add_scalar('SimulationMetrics/CarsThatLeft', state.get('cars_that_left', 0), step)
         self.writer.add_scalar('SimulationMetrics/DeltaCarsInTLS', state.get('delta_cars_in_tls', 0), step)
