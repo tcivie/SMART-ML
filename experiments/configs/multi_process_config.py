@@ -128,9 +128,9 @@ def hidden_2x2(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
     policy_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase),
-                              [[256, 128, 128, 64], [128, 64, 32]], 2)
+                              [[64, 32, 16], [32, 16]], 1)
     target_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase),
-                              [[256, 128, 128, 64], [128, 64, 32]], 2)
+                              [[64, 32, 16], [32, 16]], 1)
     return SplitDQN.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -138,13 +138,13 @@ def hidden_2x2(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.1),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(20_000),
+        memory=ReplayMemory(10_000),
         EPS_START=0.9,
         EPS_END=0.05,
-        EPS_DECAY=100_000,
+        EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=2_048,
-        TARGET_UPDATE=20_000
+        BATCH_SIZE=1_024,
+        TARGET_UPDATE=1_000
     )
 
 
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     # List of arguments to pass to the function
     args1 = (
         20,
-        5,
+        10,
         SplitDQN,
         SumoSingleTLSExperimentUncontrolledPhase,
         hidden_2x2,

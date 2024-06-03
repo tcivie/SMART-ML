@@ -80,10 +80,10 @@ def more_cars_that_left(states: dict, cars_that_left: int) -> torch.Tensor:
 
 
 def occupancy_is_bad(states: dict, cars_that_left: int) -> torch.Tensor:
-    reward = cars_that_left * 5
+    reward = cars_that_left * 10
     for lane in states.values():
         if lane.get('queue_length', 0) > 0:
-            reward -= exponential_percentage(lane.get('occupancy', 0), base=10)
+            reward -= exponential_percentage(lane.get('occupancy', 0), base=20)
     return torch.tensor(reward, dtype=torch.float32, device=device)
 
 
