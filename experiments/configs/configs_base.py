@@ -81,7 +81,6 @@ class ConfigBase:
                 f"  state={self.state}\n"
                 f")")
 
-
     def log_state_to_tensorboard(self, state: dict, step: int = 0):
         self.writer.add_scalar('SimulationMetrics/CarsThatLeft', state.get('cars_that_left', 0), step)
         self.writer.add_scalar('SimulationMetrics/DeltaCarsInTLS', state.get('delta_cars_in_tls', 0), step)
@@ -163,13 +162,40 @@ class ConfigBase:
 
             self.log.print_epoch(epoch, epochs, step)
             self.writer.add_scalar('SimulationMetrics/TotalSteps', step, epoch)
-            # self.log.log_epoch(epoch, step)
             results.append(step)
             step = 0
         stop_simulation(simulation_id)
-        # self.log.plot_results(results, 'Epochs', 'Total Steps', 'Total Steps per Epoch')
-        # self.log.summarize_run()
-        # self.log.convert_to_html()
+
+
+class MasterSlaveConfig(ConfigBase):
+    def __init__(self,
+                 epochs: int,
+                 step_size: int,
+                 master_model_class: Type[BaseModel],
+                 model_class: Type[BaseModel],
+                 experiment_class,
+                 writer: SummaryWriter,
+                 master_model_params_func: Callable[[object, str], BaseModel.Params],
+                 model_params_func: Callable[[object, str], BaseModel.Params],
+                 simulation_run_path: str = 'bologna/acosta/run.sumocfg',
+                 reward_func: Callable[[dict, int], torch.Tensor] = None,
+                 is_gui=False
+                 ):
+        super().__init__(epochs,
+                         step_size,
+                         model_class,
+                         experiment_class,
+                         writer,
+                         model_params_func,
+                         simulation_run_path=simulation_run_path,
+                         reward_func=reward_func,
+                         is_gui=is_gui)
+
+    # def run_till_end(self):
+    #
+
+
+
 
 
 class ConfigLogging:

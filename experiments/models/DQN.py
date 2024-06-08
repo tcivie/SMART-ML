@@ -116,7 +116,7 @@ class DQN(BaseModel):
         self.optimizer.zero_grad()
         loss.backward()
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1000)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
         return loss
 
@@ -154,3 +154,24 @@ class SplitDQN(DQN):
                 action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
                 self.memory.push(action, current_state, reward)
                 return action
+
+
+class DQNWithPhases(SplitDQN):
+    @overrides
+    def select_action(self, current_state: torch.Tensor, reward):
+        sample = random.random()
+        eps_threshold = self.params.EPS_END + (self.params.EPS_START - self.params.EPS_END) * np.exp(
+            -1. * self.steps_done / self.params.EPS_DECAY)
+        self.steps_done += 1
+        if sample > eps_threshold:
+            with torch.inference_mode():
+                action = self.policy_net(current_state.float())
+                action = torch.stack(
+                    [lane.argmax() for lane in action.split(self.actions // self.num_of_controlled_links)])
+                action = [LightPhase(a.item()) for a in action]
+                self.memory.push(action, current_state, reward)
+                return action
+        else:
+            action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
+            self.memory.push(action, current_state, reward)
+            return action

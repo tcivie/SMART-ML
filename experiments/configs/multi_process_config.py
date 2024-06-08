@@ -11,10 +11,11 @@ from experiments.SingleTLS import SumoSingleTLSExperiment, SumoSingleTLSExperime
 from experiments.configs import reward_functions
 from experiments.configs.configs_base import ConfigBase
 
-from experiments.models.DQN import DQN, SplitDQN
+from experiments.models.DQN import DQN, SplitDQN, DQNWithPhases
 from experiments.models.components.memory import ReplayMemory
 from experiments.models.components.networks import SimpleNetwork, SplitNetwork
 from experiments.models.models_base import BaseModel
+from experiments.models.rewardModel import RewardModel
 from sumo_sim.Simulation import LightPhase
 
 
@@ -54,46 +55,82 @@ def create_and_run_simulation(epochs: int,
 simulation_run_path = 'bologna/acosta/run.sumocfg'
 
 
-# def hidden_2(dim_size: int):
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                2, [64, 64])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                2, [64, 64])
-#     return DQN.Params(
-#         observations=7 * dim_size,
-#         actions=2,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#     )
+def hidden_2(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = SimpleNetwork(7 * dim_size,
+                               num_controlled_links * len(LightPhase), [64, 64])
+    target_net = SimpleNetwork(7 * dim_size,
+                               num_controlled_links * len(LightPhase), [64, 64])
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(10_000),
+        EPS_START=0.9,
+        EPS_END=0.05,
+        EPS_DECAY=1_000,
+        GAMMA=0.9,
+        BATCH_SIZE=1_024,
+        TARGET_UPDATE=1_000
+    )
+
+
 #
 #
-# def hidden_3(dim_size: int):
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                2, [64, 64, 64])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                2, [64, 64, 64])
-#     return DQN.Params(
-#         observations=7 * dim_size,
-#         actions=2,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#     )
+def hidden_3(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = SimpleNetwork(7 * dim_size,
+                               num_controlled_links * len(LightPhase), [64, 64, 64])
+    target_net = SimpleNetwork(7 * dim_size,
+                               num_controlled_links * len(LightPhase), [64, 64, 64])
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(10_000),
+        EPS_START=0.9,
+        EPS_END=0.05,
+        EPS_DECAY=1_000,
+        GAMMA=0.9,
+        BATCH_SIZE=1_024,
+        TARGET_UPDATE=1_000
+    )
+
+
 #
 #
-# def hidden_3_small(dim_size: int):
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                2, [7 * dim_size, 7 * dim_size, 7 * dim_size])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                2, [7 * dim_size, 7 * dim_size, 7 * dim_size])
-#     return DQN.Params(
-#         observations=7 * dim_size,
-#         actions=2,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#     )
+def hidden_3_small(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = SimpleNetwork(7 * dim_size,
+                               num_controlled_links * len(LightPhase), [7 * dim_size, dim_size, dim_size // 2])
+    target_net = SimpleNetwork(7 * dim_size,
+                               num_controlled_links * len(LightPhase), [7 * dim_size, dim_size, dim_size // 2])
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(10_000),
+        EPS_START=0.9,
+        EPS_END=0.05,
+        EPS_DECAY=1_000,
+        GAMMA=0.9,
+        BATCH_SIZE=1_024,
+        TARGET_UPDATE=1_000
+    )
+
+
 #
 #
 # def hidden_4(dim_size: int):
@@ -149,34 +186,60 @@ def hidden_2x2(state, tls_id: str):
 
 
 if __name__ == '__main__':
+    model = SimpleNetwork(1, 1, [64, 64])
 
     # List of arguments to pass to the function
     args1 = (
-        20,
+        5,
         10,
         SplitDQN,
         SumoSingleTLSExperimentUncontrolledPhase,
         hidden_2x2,
         simulation_run_path,
-        reward_functions.occupancy_is_bad)
-    # args2 = (
-    #     50, 30, DQN, SumoSingleTLSExperiment,
-    #     hidden_3,
-    #     simulation_run_path,
-    #     reward_functions.environmental_impact)
-    # args3 = (
-    #     50, 30, DQN, SumoSingleTLSExperiment,
-    #     hidden_3_small,
-    #     simulation_run_path,
-    #     reward_functions.environmental_impact)
-    # args4 = (
-    #     50, 30, DQN, SumoSingleTLSExperiment,
-    #     hidden_4,
-    #     simulation_run_path,
-    #     reward_functions.environmental_impact)
+        RewardModel(
+            model=model,
+            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
+            criterion=torch.nn.BCELoss()
+        ))
+    args2 = (
+        5,
+        10,
+        DQNWithPhases,
+        SumoSingleTLSExperimentUncontrolledPhase,
+        hidden_2,
+        simulation_run_path,
+        RewardModel(
+            model=model,
+            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
+            criterion=torch.nn.BCELoss()
+        ))
+    args3 = (
+        5,
+        10,
+        DQNWithPhases,
+        SumoSingleTLSExperimentUncontrolledPhase,
+        hidden_3,
+        simulation_run_path,
+        RewardModel(
+            model=model,
+            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
+            criterion=torch.nn.BCELoss()
+        ))
+    args4 = (
+        5,
+        10,
+        DQNWithPhases,
+        SumoSingleTLSExperimentUncontrolledPhase,
+        hidden_3_small,
+        simulation_run_path,
+        RewardModel(
+            model=model,
+            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
+            criterion=torch.nn.BCELoss()
+        ))
 
-    # arguments = [args1, args2, args3, args4]
-    arguments = [args1]
+    arguments = [args1, args2, args3, args4]
+    # arguments = [args2]
     # Create a list to hold the processes
     processes = []
 
