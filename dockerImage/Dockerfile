@@ -32,7 +32,6 @@ COPY . /app
 
 # Set environment variables for SUMO and Python
 ENV SUMO_HOME /usr/share/sumo
-ENV SUMO_CONF_FILE /app/scenarios/run.sumocfg
 ENV PATH="/app/venv/bin:$PATH"
 
 # Expose the port

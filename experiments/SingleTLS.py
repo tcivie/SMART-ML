@@ -1,6 +1,6 @@
 from abc import ABC
 from enum import Enum
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Type
 
 import torch
 from overrides import overrides
@@ -10,6 +10,7 @@ from api_endpoints import get_initial_data, set_traffic_light_next_phase, switch
 from experiments import device
 from experiments.experiments_base import Experiment
 from experiments.models.models_base import BaseModel
+from experiments.models.rewardModel import RewardModel
 from sumo_sim.Simulation import LightPhase
 
 
@@ -121,3 +122,11 @@ class SumoSingleTLSExperimentUncontrolledPhase(SumoSingleTLSExperiment):
         else:
             raise RuntimeError("Illegal action")
         return ret
+    
+class SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward(SumoSingleTLSExperimentUncontrolledPhase):
+    
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel,
+                 reward_func: Type[RewardModel] = None):
+        super().__init__(session_id, tls_id, model, reward_func)
+        if reward_func is not None:
+            self.reward_func = reward_func(self.tls_data)

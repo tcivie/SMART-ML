@@ -1,4 +1,6 @@
 import multiprocessing
+import subprocess
+import sys
 import time
 from multiprocessing import freeze_support
 
@@ -7,7 +9,8 @@ from typing import Callable, Type
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from experiments.SingleTLS import SumoSingleTLSExperiment, SumoSingleTLSExperimentUncontrolledPhase
+from experiments.SingleTLS import SumoSingleTLSExperiment, SumoSingleTLSExperimentUncontrolledPhase, \
+    SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward
 from experiments.configs import reward_functions
 from experiments.configs.configs_base import ConfigBase
 
@@ -69,12 +72,12 @@ def hidden_2(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(10_000),
+        memory=ReplayMemory(100_000),
         EPS_START=0.9,
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=1_024,
+        BATCH_SIZE=32,
         TARGET_UPDATE=1_000
     )
 
@@ -95,12 +98,12 @@ def hidden_3(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(10_000),
+        memory=ReplayMemory(100_000),
         EPS_START=0.9,
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=1_024,
+        BATCH_SIZE=32,
         TARGET_UPDATE=1_000
     )
 
@@ -121,12 +124,12 @@ def hidden_3_small(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(10_000),
+        memory=ReplayMemory(100_000),
         EPS_START=0.9,
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=1_024,
+        BATCH_SIZE=32,
         TARGET_UPDATE=1_000
     )
 
@@ -175,68 +178,57 @@ def hidden_2x2(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.1),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(10_000),
+        memory=ReplayMemory(100_000),
         EPS_START=0.9,
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=1_024,
+        BATCH_SIZE=32,
         TARGET_UPDATE=1_000
     )
 
 
 if __name__ == '__main__':
-    model = SimpleNetwork(1, 1, [64, 64])
-
+    if 'darwin' in sys.platform:
+        print('Running \'caffeinate\' on MacOSX to prevent the system from sleeping')
+    subprocess.Popen('caffeinate')
     # List of arguments to pass to the function
     args1 = (
-        5,
+        10,
         10,
         SplitDQN,
-        SumoSingleTLSExperimentUncontrolledPhase,
+        SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         hidden_2x2,
         simulation_run_path,
-        RewardModel(
-            model=model,
-            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
-            criterion=torch.nn.BCELoss()
-        ))
+        RewardModel
+    )
     args2 = (
-        5,
+        10,
         10,
         DQNWithPhases,
-        SumoSingleTLSExperimentUncontrolledPhase,
+        SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         hidden_2,
         simulation_run_path,
-        RewardModel(
-            model=model,
-            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
-            criterion=torch.nn.BCELoss()
-        ))
+        RewardModel
+    )
     args3 = (
-        5,
+        10,
         10,
         DQNWithPhases,
-        SumoSingleTLSExperimentUncontrolledPhase,
+        SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         hidden_3,
         simulation_run_path,
-        RewardModel(
-            model=model,
-            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
-            criterion=torch.nn.BCELoss()
-        ))
+        RewardModel
+    )
     args4 = (
-        5,
+        10,
         10,
         DQNWithPhases,
-        SumoSingleTLSExperimentUncontrolledPhase,
+        SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         hidden_3_small,
         simulation_run_path,
-        RewardModel(
-            model=model,
-            optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
-            criterion=torch.nn.BCELoss()
-        ))
+        RewardModel
+    )
 
     arguments = [args1, args2, args3, args4]
     # arguments = [args2]

@@ -188,11 +188,9 @@ class MasterSlaveConfig(ConfigBase):
                          writer,
                          model_params_func,
                          simulation_run_path=simulation_run_path,
-                         reward_func=reward_func,
+                         reward_func=reward_model,
                          is_gui=is_gui)
-
-    # def run_till_end(self):
-    #
+        
 
 
 
