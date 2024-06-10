@@ -271,6 +271,93 @@ def lstm_net_large(state, tls_id: str):
         TARGET_UPDATE=200
     )
 
+###
+
+def lstm_net_tiny_v1(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = LSTMNetwork(7 * dim_size, 8, 1, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 8, 1, num_controlled_links * len(LightPhase))
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.0005),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(50_000),
+        EPS_START=0.85,
+        EPS_END=0.05,
+        EPS_DECAY=1_000,
+        GAMMA=0.9,
+        BATCH_SIZE=32,
+        TARGET_UPDATE=1_000
+    )
+
+def lstm_net_tiny_v2(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = LSTMNetwork(7 * dim_size, 32, 2, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 32, 2, num_controlled_links * len(LightPhase))
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(100_000),
+        EPS_START=0.9,
+        EPS_END=0.1,
+        EPS_DECAY=2_000,
+        GAMMA=0.95,
+        BATCH_SIZE=32,
+        TARGET_UPDATE=1_000
+    )
+
+def lstm_net_tiny_v3(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(100_000),
+        EPS_START=0.8,
+        EPS_END=0.05,
+        EPS_DECAY=1_000,
+        GAMMA=0.9,
+        BATCH_SIZE=32,
+        TARGET_UPDATE=1_000
+    )
+
+def lstm_net_tiny_v4(state, tls_id: str):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    policy_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
+    return DQNWithPhases.Params(
+        observations=7 * dim_size,
+        policy_net=policy_net,
+        target_net=target_net,
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
+        num_of_controlled_links=num_controlled_links,
+
+        memory=ReplayMemory(200_000),
+        EPS_START=0.9,
+        EPS_END=0.05,
+        EPS_DECAY=1_500,
+        GAMMA=0.9,
+        BATCH_SIZE=32,
+        TARGET_UPDATE=1_000
+    )
+
+
 
 if __name__ == '__main__':
     if 'darwin' in sys.platform:
@@ -282,7 +369,7 @@ if __name__ == '__main__':
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-        lstm_net_tiny,
+        lstm_net_tiny_v1,
         simulation_run_path,
         RewardModel
     )
@@ -291,7 +378,7 @@ if __name__ == '__main__':
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-        lstm_net_small,
+        lstm_net_tiny_v2,
         simulation_run_path,
         RewardModel
     )
@@ -300,7 +387,7 @@ if __name__ == '__main__':
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-        lstm_net_medium,
+        lstm_net_tiny_v3,
         simulation_run_path,
         RewardModel
     )
@@ -309,7 +396,7 @@ if __name__ == '__main__':
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-        lstm_net_large,
+        lstm_net_tiny_v4,
         simulation_run_path,
         RewardModel
     )
