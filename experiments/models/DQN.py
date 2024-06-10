@@ -175,3 +175,42 @@ class DQNWithPhases(SplitDQN):
             action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
             self.memory.push(action, current_state, reward)
             return action
+
+
+class LSTMDQNWithPhases(SplitDQN):
+    def __init__(self, *args, **kwargs):
+        super(LSTMDQNWithPhases, self).__init__(*args, **kwargs)
+        self.h0 = None
+        self.c0 = None
+
+    @overrides
+    def select_action(self, current_state: torch.Tensor, reward):
+        sample = random.random()
+        eps_threshold = self.params.EPS_END + (self.params.EPS_START - self.params.EPS_END) * np.exp(
+            -1. * self.steps_done / self.params.EPS_DECAY)
+        self.steps_done += 1
+
+        # Adjust the input dimensions for the LSTM
+        batch_size = 1
+        seq_len = 1
+        current_state = current_state.view(batch_size, seq_len, -1).float().to(device)
+
+        # Initialize hidden states only if they are not already initialized
+        if self.h0 is None or self.c0 is None:
+            self.h0 = torch.zeros(self.policy_net.num_layers, batch_size, self.policy_net.hidden_size).to(device)
+            self.c0 = torch.zeros(self.policy_net.num_layers, batch_size, self.policy_net.hidden_size).to(device)
+
+        if sample > eps_threshold:
+            with torch.inference_mode():
+                # Get the action from the policy network
+                action_output, (self.h0, self.c0) = self.policy_net(current_state, self.h0, self.c0)
+                action = torch.stack(
+                    [lane.argmax() for lane in action_output.split(self.actions // self.num_of_controlled_links, dim=1)]
+                )
+                action = [LightPhase(a.item()) for a in action]
+                self.memory.push(action, current_state, reward)
+                return action
+        else:
+            action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
+            self.memory.push(action, current_state, reward)
+            return action

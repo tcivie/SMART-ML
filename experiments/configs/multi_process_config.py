@@ -14,7 +14,7 @@ from experiments.SingleTLS import SumoSingleTLSExperiment, SumoSingleTLSExperime
 from experiments.configs import reward_functions
 from experiments.configs.configs_base import ConfigBase
 
-from experiments.models.DQN import DQN, SplitDQN, DQNWithPhases
+from experiments.models.DQN import DQN, SplitDQN, DQNWithPhases, LSTMDQNWithPhases
 from experiments.models.components.memory import ReplayMemory
 from experiments.models.components.networks import SimpleNetwork, SplitNetwork, LSTMNetwork
 from experiments.models.models_base import BaseModel
@@ -190,8 +190,8 @@ def hidden_2x2(state, tls_id: str):
 def lstm_net_tiny(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = LSTMNetwork(7 * len(LightPhase), 32, 1, num_controlled_links * len(LightPhase))
-    target_net = LSTMNetwork(7 * len(LightPhase), 32, 1, num_controlled_links * len(LightPhase))
+    policy_net = LSTMNetwork(7 * dim_size, 32, 1, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 32, 1, num_controlled_links * len(LightPhase))
     return DQNWithPhases.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -211,8 +211,8 @@ def lstm_net_tiny(state, tls_id: str):
 def lstm_net_small(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = LSTMNetwork(7 * len(LightPhase), 64, 2, num_controlled_links * len(LightPhase))
-    target_net = LSTMNetwork(7 * len(LightPhase), 64, 2, num_controlled_links * len(LightPhase))
+    policy_net = LSTMNetwork(7 * dim_size, 64, 2, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 64, 2, num_controlled_links * len(LightPhase))
     return DQNWithPhases.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -232,8 +232,8 @@ def lstm_net_small(state, tls_id: str):
 def lstm_net_medium(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = LSTMNetwork(7 * len(LightPhase), 128, 3, num_controlled_links * len(LightPhase))
-    target_net = LSTMNetwork(7 * len(LightPhase), 128, 3, num_controlled_links * len(LightPhase))
+    policy_net = LSTMNetwork(7 * dim_size, 128, 3, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 128, 3, num_controlled_links * len(LightPhase))
     return DQNWithPhases.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -253,8 +253,8 @@ def lstm_net_medium(state, tls_id: str):
 def lstm_net_large(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = LSTMNetwork(7 * len(LightPhase), 256, 3, num_controlled_links * len(LightPhase))
-    target_net = LSTMNetwork(7 * len(LightPhase), 256, 3, num_controlled_links * len(LightPhase))
+    policy_net = LSTMNetwork(7 * dim_size, 256, 3, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 256, 3, num_controlled_links * len(LightPhase))
     return DQNWithPhases.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     args1 = (
         10,
         10,
-        SplitDQN,
+        LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         lstm_net_tiny,
         simulation_run_path,
@@ -289,7 +289,7 @@ if __name__ == '__main__':
     args2 = (
         10,
         10,
-        DQNWithPhases,
+        LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         lstm_net_small,
         simulation_run_path,
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     args3 = (
         10,
         10,
-        DQNWithPhases,
+        LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         lstm_net_medium,
         simulation_run_path,
@@ -307,15 +307,15 @@ if __name__ == '__main__':
     args4 = (
         10,
         10,
-        DQNWithPhases,
+        LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
         lstm_net_large,
         simulation_run_path,
         RewardModel
     )
 
-    arguments = [args1, args2, args3, args4]
-    # arguments = [args2]
+    # arguments = [args1, args2, args3, args4]
+    arguments = [args1]
     # Create a list to hold the processes
     processes = []
 

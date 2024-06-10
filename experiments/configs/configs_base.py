@@ -21,6 +21,7 @@ from api_endpoints import start_simulation, reset_simulation, step_simulation, s
 from experiments import device
 from experiments.configs import SUMO_SIMULATIONS_BASE_PATH
 from experiments.experiments_base import Experiment
+from experiments.models.components.networks import LSTMNetwork
 from experiments.models.models_base import BaseModel
 
 import lxml.etree as lxml_etree
@@ -65,7 +66,17 @@ class ConfigBase:
         agent_policy_net = self.agents[0].model.policy_net
         example_input = torch.zeros(1, len(self.state['vehicles_in_tls'][self.agents[0].tls_id]['lanes']) * 7).to(
             device)
-        self.writer.add_graph(agent_policy_net, example_input)
+        if isinstance(agent_policy_net, LSTMNetwork):
+            batch_size = 1
+            seq_len = 1
+            input_size = len(self.state['vehicles_in_tls'][self.agents[0].tls_id]['lanes']) * 7
+            h0 = torch.zeros(agent_policy_net.num_layers, batch_size, agent_policy_net.hidden_size).to(device)
+            c0 = torch.zeros(agent_policy_net.num_layers, batch_size, agent_policy_net.hidden_size).to(device)
+            example_input = torch.zeros(batch_size, seq_len, input_size).to(device)
+            inputs = [example_input, h0, c0]
+            self.writer.add_graph(agent_policy_net, inputs)
+        else:
+            self.writer.add_graph(agent_policy_net, example_input)
         self.log = ConfigLogging(**vars(self))
 
     def __str__(self):

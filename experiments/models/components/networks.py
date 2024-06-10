@@ -118,10 +118,12 @@ class LSTMNetwork(nn.Module):
         super(LSTMNetwork, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
+        self.state_size = input_size
+        self.action_size = output_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
 
-    def forward(self, x):
-        h0 = torch.zeros(self.lstm.num_layers, x.size(0), self.lstm.hidden_size).to(x.device)
-        c0 = torch.zeros(self.lstm.num_layers, x.size(0), self.lstm.hidden_size).to(x.device)
-        out, _ = self.lstm(x, (h0, c0))
+    def forward(self, x, h0, c0):
+        out, (h0, c0) = self.lstm(x, (h0, c0))
         out = self.fc(out[:, -1, :])
-        return out
+        return out, (h0, c0)

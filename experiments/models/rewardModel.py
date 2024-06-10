@@ -14,6 +14,8 @@ class RewardModel:
             self.model = LSTMNetwork(input_size, hidden_size, num_layers, output_size)
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
             self.criterion = nn.MSELoss()
+            self.h0 = torch.zeros(num_layers, 1, hidden_size).to('cpu')  # Assuming 'cpu', change if needed
+            self.c0 = torch.zeros(num_layers, 1, hidden_size).to('cpu')
         self.last_state = None
 
     def __call__(self, metrics, cars_that_left):
@@ -25,17 +27,20 @@ class RewardModel:
 
         total_occupancy_tensor = torch.tensor(total_occupancy, dtype=torch.float32, requires_grad=True).unsqueeze(0).unsqueeze(0)
         state_tensor = self.extract_state_tensor(metrics).unsqueeze(0)
+
         if total_occupancy == 0:
-            with torch.inference_mode():
-                reward = self.model(state_tensor)
+            with torch.no_grad():  # Use torch.no_grad() instead of torch.inference_mode()
+                reward, (self.h0, self.c0) = self.model(state_tensor, self.h0, self.c0)
         else:
-            reward = self.model(state_tensor)
+            reward, (self.h0, self.c0) = self.model(state_tensor, self.h0, self.c0)
+
         loss = self.criterion(total_occupancy_tensor, torch.tensor(0, dtype=torch.float32).unsqueeze(0).unsqueeze(0))
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         self.last_state = total_occupancy
-        normalized_reward = (reward - 0.5) * 10
+
+        normalized_reward = (reward.item() - 0.5) * 10  # Ensure reward is a scalar value
         return normalized_reward
 
     def extract_state_tensor(self, metrics):
