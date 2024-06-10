@@ -40,7 +40,7 @@ class RewardModel:
         self.optimizer.step()
         self.last_state = total_occupancy
 
-        normalized_reward = (reward.item() - 0.5) * 10  # Ensure reward is a scalar value
+        normalized_reward = (reward.item() - 0.5)  # Ensure reward is a scalar value
         return normalized_reward
 
     def extract_state_tensor(self, metrics):

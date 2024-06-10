@@ -253,8 +253,8 @@ def lstm_net_medium(state, tls_id: str):
 def lstm_net_large(state, tls_id: str):
     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
     num_controlled_links = state['num_controlled_links'][tls_id]
-    policy_net = LSTMNetwork(7 * dim_size, 256, 3, num_controlled_links * len(LightPhase))
-    target_net = LSTMNetwork(7 * dim_size, 256, 3, num_controlled_links * len(LightPhase))
+    policy_net = LSTMNetwork(7 * dim_size, 256, 4, num_controlled_links * len(LightPhase))
+    target_net = LSTMNetwork(7 * dim_size, 256, 4, num_controlled_links * len(LightPhase))
     return DQNWithPhases.Params(
         observations=7 * dim_size,
         policy_net=policy_net,
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     subprocess.Popen('caffeinate')
     # List of arguments to pass to the function
     args1 = (
-        10,
+        20,
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
@@ -287,7 +287,7 @@ if __name__ == '__main__':
         RewardModel
     )
     args2 = (
-        10,
+        20,
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
@@ -296,7 +296,7 @@ if __name__ == '__main__':
         RewardModel
     )
     args3 = (
-        10,
+        20,
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
@@ -305,7 +305,7 @@ if __name__ == '__main__':
         RewardModel
     )
     args4 = (
-        10,
+        20,
         10,
         LSTMDQNWithPhases,
         SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
@@ -314,8 +314,8 @@ if __name__ == '__main__':
         RewardModel
     )
 
-    # arguments = [args1, args2, args3, args4]
-    arguments = [args1]
+    arguments = [args1, args2, args3, args4]
+    # arguments = [args1]
     # Create a list to hold the processes
     processes = []
 
