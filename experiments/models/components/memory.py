@@ -17,7 +17,6 @@ class ReplayMemory(object):
         """Save a transition"""
         if len(self.memory) == 0:
             self.old_state = new_state
-            return
         # Convert action to tensor if it's an integer
         if isinstance(action, int):
             action = torch.tensor([[action]], device=device, dtype=torch.long)

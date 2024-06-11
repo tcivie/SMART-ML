@@ -33,6 +33,9 @@ class SumoSingleTLSExperiment(Experiment):
         self.tls_id = tls_id
         self.selected_program_ids = self.get_tls_program_ids(self.initial_data, tls_id)
         self.tls_data = self.get_tls_data(self.initial_data, tls_id)
+        
+        self.best_steps_count = float('inf')
+        self.current_step_count = 0
 
     def get_selected_action_method(self, action) -> callable:
         if action == self.Action.STEP.value:
@@ -51,6 +54,7 @@ class SumoSingleTLSExperiment(Experiment):
         return ret
 
     def extract_state_tensor(self, response):
+        self.current_step_count += 1
         is_ended = response['is_ended']
         metrics = response['vehicles_in_tls'][self.tls_id]['longest_waiting_time_car_in_lane']
         cars_that_left = response['cars_that_left']
@@ -63,8 +67,12 @@ class SumoSingleTLSExperiment(Experiment):
                 extracted_data.extend([0. for _ in range(7)])
         state = torch.tensor(extracted_data, dtype=torch.float32, device=device)
 
-        # print(metrics)
         reward = self.reward_func(metrics, cars_that_left)
+        if is_ended:
+            if self.current_step_count < self.best_steps_count:
+                self.best_steps_count = self.current_step_count
+                reward += 100  # Bonus for improving the best time
+            self.current_step_count = 0  # Reset start time for the next run
         return state, reward, is_ended
 
     @staticmethod
@@ -84,10 +92,11 @@ class SumoSingleTLSExperiment(Experiment):
 
     def step(self, environment_state) -> callable:
         state_tensor, reward, is_ended = self.extract_state_tensor(environment_state)
-        if is_ended:
-            return None
+        reward = reward - 0.01
         selected_action = self.model.select_action(state_tensor, reward)
         self.model.optimize_model()
+        if is_ended:
+            return None
         return self.get_selected_action_method(selected_action)
 
 

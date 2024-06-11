@@ -77,7 +77,7 @@ def hidden_2(state, tls_id: str):
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=32,
+        BATCH_SIZE=1,
         TARGET_UPDATE=1_000
     )
 
@@ -103,7 +103,7 @@ def hidden_3(state, tls_id: str):
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=32,
+        BATCH_SIZE=1,
         TARGET_UPDATE=1_000
     )
 
@@ -129,7 +129,7 @@ def hidden_3_small(state, tls_id: str):
         EPS_END=0.05,
         EPS_DECAY=1_000,
         GAMMA=0.9,
-        BATCH_SIZE=32,
+        BATCH_SIZE=1,
         TARGET_UPDATE=1_000
     )
 
@@ -469,7 +469,7 @@ def lstm_net_tiny_v9(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(250_000),
+        memory=ReplayMemory(1_000),
         EPS_START=0.85,
         EPS_END=0.05,
         EPS_DECAY=3_000,
@@ -490,7 +490,7 @@ def lstm_net_tiny_v10(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.0007),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(500_000),
+        memory=ReplayMemory(1_000),
         EPS_START=0.8,
         EPS_END=0.05,
         EPS_DECAY=4_000,
@@ -511,7 +511,7 @@ def lstm_net_tiny_v11(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.002),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(300_000),
+        memory=ReplayMemory(1_000),
         EPS_START=0.85,
         EPS_END=0.05,
         EPS_DECAY=2_000,
@@ -532,7 +532,7 @@ def lstm_net_tiny_v12(state, tls_id: str):
         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
         num_of_controlled_links=num_controlled_links,
 
-        memory=ReplayMemory(400_000),
+        memory=ReplayMemory(1_000),
         EPS_START=0.8,
         EPS_END=0.05,
         EPS_DECAY=3_000,

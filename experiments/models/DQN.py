@@ -43,6 +43,7 @@ class DQN(BaseModel):
         self.policy_net = params.policy_net.to(device)
         self.target_net = params.target_net.to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.params.GAMMA = torch.tensor(params.GAMMA, dtype=torch.float32).to(device)
 
         self.optimizer = params.optimizer
         self.memory = params.memory
@@ -89,8 +90,9 @@ class DQN(BaseModel):
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None])
         state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action).to(torch.int64)
-        reward_batch = torch.cat(batch.reward)
+        flattened_actions = [item.value for sublist in batch.action for item in sublist]
+        action_batch = torch.tensor(flattened_actions, dtype=torch.int64)
+        reward_batch = torch.tensor(batch.reward, dtype=torch.float32)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
@@ -182,7 +184,20 @@ class LSTMDQNWithPhases(SplitDQN):
         super(LSTMDQNWithPhases, self).__init__(*args, **kwargs)
         self.h0 = None
         self.c0 = None
+        self.state_buffer = []
+        self.seq_len = 1
 
+    def initialize_h0_c0(self):
+        self.h0 = torch.zeros(self.policy_net.num_layers, self.params.BATCH_SIZE, self.policy_net.hidden_size).to(device)
+        self.c0 = torch.zeros(self.policy_net.num_layers, self.params.BATCH_SIZE, self.policy_net.hidden_size).to(device)
+        
+    def clear_buffers(self):
+        self.state_buffer = []
+        
+    def pop_first_state(self):
+        self.state_buffer.pop(0)
+        
+        
     @overrides
     def select_action(self, current_state: torch.Tensor, reward):
         sample = random.random()
@@ -190,25 +205,81 @@ class LSTMDQNWithPhases(SplitDQN):
             -1. * self.steps_done / self.params.EPS_DECAY)
         self.steps_done += 1
 
-        # Adjust the input dimensions for the LSTM
-        batch_size = 1
-        seq_len = 1
-        current_state = current_state.view(batch_size, seq_len, -1).float().to(device)
-
         # Initialize hidden states only if they are not already initialized
         if self.h0 is None or self.c0 is None:
-            self.h0 = torch.zeros(self.policy_net.num_layers, batch_size, self.policy_net.hidden_size).to(device)
-            self.c0 = torch.zeros(self.policy_net.num_layers, batch_size, self.policy_net.hidden_size).to(device)
+            self.initialize_h0_c0()
 
+        self.state_buffer.append(current_state)
+        if len(self.state_buffer) <= self.params.BATCH_SIZE:
+            return [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
+        
+        self.pop_first_state() # Keep the size of a batch
+        
+        batch_states = torch.stack(self.state_buffer)
+        
         if sample > eps_threshold:
+            # Accumulate BATCH to transform it and pass it to the policy net
+            current_state = batch_states.view(self.params.BATCH_SIZE, self.seq_len, -1).float().to(device)
             action_output, (self.h0, self.c0) = self.policy_net(current_state, self.h0, self.c0)
             action = torch.stack(
-                [lane.argmax() for lane in action_output.split(self.actions // self.num_of_controlled_links, dim=1)]
+                [lane.argmax() for lane in action_output[-1].split(self.actions // self.num_of_controlled_links)]
             )
             action = [LightPhase(a.item()) for a in action]
-            self.memory.push(action, current_state, reward)
+            self.memory.push(action, batch_states[-1], reward)
             return action
         else:
             action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
             self.memory.push(action, current_state, reward)
             return action
+
+    def optimize_model(self):
+        if len(self.memory) < self.params.BATCH_SIZE:
+            return 0
+
+        if self.steps_done % self.params.TARGET_UPDATE == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+    
+        # Sample a batch of transitions
+        transitions = self.memory.sample(self.params.BATCH_SIZE)
+        batch = Transition(*zip(*transitions))
+    
+        # Convert batch of transitions into tensors
+        state_batch = torch.stack(batch.state).view(self.params.BATCH_SIZE, self.seq_len, -1).float().to(device)
+        reward_batch = torch.tensor(batch.reward).to(device).float()
+        non_final_next_states = torch.stack([s for s in batch.next_state if s is not None]).view(self.params.BATCH_SIZE, self.seq_len, -1).float().to(device)
+    
+        # Initialize hidden states for LSTM (If not initialized)
+        if self.h0 is None or self.c0 is None:
+            self.initialize_h0_c0()
+    
+        # Compute Q(s_t, a) for the batch
+        state_action_values_unparsed, (self.h0, self.c0) = self.policy_net(state_batch, self.h0, self.c0)
+        state_action_values = torch.stack([
+            torch.stack([lane.argmax() for lane in item.split(self.actions // self.num_of_controlled_links)])
+            for item in state_action_values_unparsed
+        ]).float().requires_grad_()
+    
+        # Compute V(s_{t+1}) for the batch of next states
+        with torch.no_grad():
+            next_state_values_unparsed, _ = self.target_net(non_final_next_states, self.h0, self.c0)
+            next_state_values = torch.stack([
+                torch.stack([lane.argmax() for lane in item.split(self.actions // self.num_of_controlled_links)])
+                for item in state_action_values_unparsed
+            ]).float().requires_grad_()
+
+        # Compute the expected Q values
+        reward_batch = reward_batch.unsqueeze(1).repeat(1, next_state_values.size(1))
+        expected_state_action_values = (next_state_values * self.params.GAMMA) + reward_batch
+    
+        # Compute Huber loss
+        criterion = nn.SmoothL1Loss()
+        loss = criterion(state_action_values.float(), expected_state_action_values.float())
+    
+        # Optimize the model
+        self.optimizer.zero_grad()
+        loss.backward()
+        # In-place gradient clipping
+        # torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        self.optimizer.step()
+    
+        return loss
