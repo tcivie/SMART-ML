@@ -107,7 +107,6 @@ class SplitNetwork(nn.Module):
             final_outputs = []
             for layer in self.final_layers:
                 final_outputs.append(layer(second_output))
-            # final_outputs = [layer(second_output) for layer in self.final_layers]
             final_outputs = torch.stack(final_outputs, dim=0)
             _, action_indices = final_outputs.max(dim=1)
             return action_indices

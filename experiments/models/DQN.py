@@ -201,15 +201,13 @@ class LSTMDQNWithPhases(SplitDQN):
             self.c0 = torch.zeros(self.policy_net.num_layers, batch_size, self.policy_net.hidden_size).to(device)
 
         if sample > eps_threshold:
-            with torch.inference_mode():
-                # Get the action from the policy network
-                action_output, (self.h0, self.c0) = self.policy_net(current_state, self.h0, self.c0)
-                action = torch.stack(
-                    [lane.argmax() for lane in action_output.split(self.actions // self.num_of_controlled_links, dim=1)]
-                )
-                action = [LightPhase(a.item()) for a in action]
-                self.memory.push(action, current_state, reward)
-                return action
+            action_output, (self.h0, self.c0) = self.policy_net(current_state, self.h0, self.c0)
+            action = torch.stack(
+                [lane.argmax() for lane in action_output.split(self.actions // self.num_of_controlled_links, dim=1)]
+            )
+            action = [LightPhase(a.item()) for a in action]
+            self.memory.push(action, current_state, reward)
+            return action
         else:
             action = [random.choice(list(LightPhase)) for _ in range(self.num_of_controlled_links)]
             self.memory.push(action, current_state, reward)

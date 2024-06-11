@@ -86,8 +86,8 @@ class SumoSingleTLSExperiment(Experiment):
         state_tensor, reward, is_ended = self.extract_state_tensor(environment_state)
         if is_ended:
             return None
-        self.model.optimize_model()
         selected_action = self.model.select_action(state_tensor, reward)
+        self.model.optimize_model()
         return self.get_selected_action_method(selected_action)
 
 
