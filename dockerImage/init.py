@@ -6,6 +6,7 @@ from typing import Union, Any, Dict, Tuple
 from flask import Flask, request, jsonify, Response, send_file
 from sumo_sim.Simulation import Simulation, LightPhase
 from sumo_sim.utils import append_to_tripinfo_sim_data
+import logging
 
 app = Flask(__name__)
 app.debug = False
@@ -289,4 +290,6 @@ def health_check():
 
 if __name__ == "__main__":
     PORT = os.environ.get('PORT', 8080)
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
     app.run(port=PORT, host='0.0.0.0')

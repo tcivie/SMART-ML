@@ -107,7 +107,22 @@ class SplitNetwork(nn.Module):
             final_outputs = []
             for layer in self.final_layers:
                 final_outputs.append(layer(second_output))
-            # final_outputs = [layer(second_output) for layer in self.final_layers]
             final_outputs = torch.stack(final_outputs, dim=0)
             _, action_indices = final_outputs.max(dim=1)
             return action_indices
+
+
+class LSTMNetwork(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, output_size):
+        super(LSTMNetwork, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+        self.state_size = input_size
+        self.action_size = output_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+    def forward(self, x, h0, c0):
+        out, (h0, c0) = self.lstm(x, (h0, c0))
+        out = self.fc(out[:, -1, :])
+        return out, (h0, c0)

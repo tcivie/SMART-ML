@@ -2,6 +2,7 @@ import uuid
 from enum import Enum
 from typing import Optional, Union, Any
 
+import torch
 import traci
 
 from sumo_sim.utils import find_available_port, calculate_all_possible_transitions
@@ -57,6 +58,7 @@ def initialize_vehicles_in_tls(tls_ids_list):
 class Simulation:
 
     def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
+        self.total_cars_in_simulation = 0
         self.vehicles_in_tls = None
         self._conn = None
         self._traffic_lights_cache = None
@@ -139,6 +141,7 @@ class Simulation:
         self.conn.load(['-c', self._config_path])
         self._traffic_lights_cache = None
         self.vehicles_in_tls = None
+        self.total_cars_in_simulation = 0
 
     def get_traffic_lights_data(self) -> list[dict]:
         """
@@ -271,12 +274,16 @@ class Simulation:
         for _ in range(steps):
             self.conn.simulationStep()
 
-        vehicles_in_tls, delta_cars_in_tls, cars_that_left = self._get_tls_statistics(tls_ids)
+        vehicles_in_tls = self._get_tls_statistics(tls_ids)
+
+        new_total_cars_in_simulation = self.conn.vehicle.getIDCount()
+        delta_cars_in_tls = new_total_cars_in_simulation - self.total_cars_in_simulation
+        self.total_cars_in_simulation = new_total_cars_in_simulation
 
         return {
             'vehicles_in_tls': vehicles_in_tls,
             'delta_cars_in_tls': delta_cars_in_tls,
-            'cars_that_left': cars_that_left,
+            'total_cars_in_simulation': self.total_cars_in_simulation,
             'is_ended': self.conn.simulation.getMinExpectedNumber() == 0
         }
 
@@ -307,6 +314,7 @@ class Simulation:
         self.vehicles_in_tls = initialize_vehicles_in_tls(tls_ids_list)
         for tls_id in tls_ids_list:
             controlled_lanes = self.conn.trafficlight.getControlledLanes(tls_id)
+            self.vehicles_in_tls[tls_id]['current_tls_state_id'] = self.conn.trafficlight.getPhase(tls_id)
             for lane in controlled_lanes:
                 lane_vehicle_ids = self.conn.lane.getLastStepVehicleIDs(lane)
                 self.vehicles_in_tls[tls_id]['lanes'][lane] = lane_vehicle_ids
@@ -315,16 +323,7 @@ class Simulation:
                 metrics_per_lane = self._calculate_lane_metrics(lane, lane_vehicle_ids)
                 self.vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'][lane] = metrics_per_lane
 
-        # Calculate the delta
-        current_vehicles_in_tls = 0
-        cars_after_step = set()
-        for tls_id in self.vehicles_in_tls:
-            current_vehicles_in_tls += self.vehicles_in_tls[tls_id]['total']
-            for lane in self.vehicles_in_tls[tls_id]['lanes']:
-                cars_after_step.update(self.vehicles_in_tls[tls_id]['lanes'][lane])
-        delta_cars_in_tls = current_vehicles_in_tls - last_vehicles_in_tls
-        cars_that_left = len(cars_before_step - cars_after_step)
-        return self.vehicles_in_tls, delta_cars_in_tls, cars_that_left
+        return self.vehicles_in_tls
 
     def _calculate_lane_metrics(self, lane, vehicle_ids):
         metrics = {}
