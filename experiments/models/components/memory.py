@@ -15,7 +15,7 @@ class ReplayMemory(object):
 
     def push(self, action, new_state, reward):
         """Save a transition"""
-        if len(self.memory) == 0:
+        if self.old_state is None:
             self.old_state = new_state
         # Convert action to tensor if it's an integer
         if isinstance(action, int):

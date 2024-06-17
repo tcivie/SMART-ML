@@ -64,7 +64,7 @@ class ConfigBase:
 
         # Cannot log multiple models so we would log only the first one
         agent_policy_net = self.agents[0].model.policy_net
-        example_input = torch.zeros(1, len(self.state['vehicles_in_tls'][self.agents[0].tls_id]['lanes']) * 7).to(
+        example_input = torch.zeros(1, agent_policy_net.state_size).to(
             device)
         if isinstance(agent_policy_net, LSTMNetwork):
             batch_size = 1
@@ -93,8 +93,8 @@ class ConfigBase:
                 f")")
 
     def log_state_to_tensorboard(self, state: dict, step: int = 0):
-        self.writer.add_scalar('SimulationMetrics/CarsThatLeft', state.get('cars_that_left', 0), step)
-        self.writer.add_scalar('SimulationMetrics/DeltaCarsInTLS', state.get('delta_cars_in_tls', 0), step)
+        self.writer.add_scalar('SimulationMetrics/TotalCars', state.get('total_cars_in_simulation', 0), step)
+        self.writer.add_scalar('SimulationMetrics/DeltaCars', state.get('delta_cars_in_tls', 0), step)
 
         aggregated_data = {}
 
@@ -128,21 +128,21 @@ class ConfigBase:
 
         for tls_id, metrics in aggregated_data.items():
             lanes_count = metrics['lanes_count']
-            self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCars', metrics['total_cars'], step)
+            self.writer.add_scalar(f'TLSMetrics/{tls_id}/TotalCars', metrics['total_cars'], step)
             if lanes_count > 0:
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/AverageSpeed',
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/AverageSpeed',
                                        metrics['average_speed_sum'] / lanes_count, step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/MaxWaitingTime',
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/MaxWaitingTime',
                                        metrics['max_wait_time_sum'] / lanes_count, step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/MinWaitingTime',
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/MinWaitingTime',
                                        metrics['min_wait_time_sum'] / lanes_count, step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/Occupancy', metrics['occupancy_sum'] / lanes_count,
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/Occupancy', metrics['occupancy_sum'] / lanes_count,
                                        step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/QueueLength',
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/QueueLength',
                                        metrics['queue_length_sum'] / lanes_count, step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCarsSum',
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/TotalCarsSum',
                                        metrics['total_cars_sum'] / lanes_count, step)
-                self.writer.add_scalar(f'LongestWaitingTime/{tls_id}/TotalCO2Emission',
+                self.writer.add_scalar(f'TLSMetrics/{tls_id}/TotalCO2Emission',
                                        metrics['total_co2_emission_sum'] / lanes_count, step)
 
     def run_till_end(self):
@@ -182,11 +182,9 @@ class MasterSlaveConfig(ConfigBase):
     def __init__(self,
                  epochs: int,
                  step_size: int,
-                 master_model_class: Type[BaseModel],
                  model_class: Type[BaseModel],
                  experiment_class,
                  writer: SummaryWriter,
-                 master_model_params_func: Callable[[object, str], BaseModel.Params],
                  model_params_func: Callable[[object, str], BaseModel.Params],
                  simulation_run_path: str = 'bologna/acosta/run.sumocfg',
                  reward_func: Callable[[dict, int], torch.Tensor] = None,
@@ -199,12 +197,54 @@ class MasterSlaveConfig(ConfigBase):
                          writer,
                          model_params_func,
                          simulation_run_path=simulation_run_path,
-                         reward_func=reward_model,
+                         reward_func=reward_func,
                          is_gui=is_gui)
-        
 
 
+class NoModelConfig(ConfigBase):
+    def __init__(self,
+                 epochs: int,
+                 step_size: int,
+                 model_class: Type[BaseModel],
+                 experiment_class,
+                 writer: SummaryWriter,
+                 model_params_func: Callable[[object, str], BaseModel.Params],
+                 simulation_run_path: str = 'bologna/acosta/run.sumocfg',
+                 reward_func: Callable[[dict, int], torch.Tensor] = None,
+                 is_gui=False
+                 ):
+        super().__init__(epochs,
+                         step_size,
+                         model_class,
+                         experiment_class,
+                         writer,
+                         model_params_func,
+                         simulation_run_path=simulation_run_path,
+                         reward_func=reward_func,
+                         is_gui=is_gui)
 
+    def run_till_end(self):
+        simulation_id = self.simulation_id
+        epochs = self.epochs
+        step_size = self.step_size
+        results = []
+        step = 0
+        print(f"Starting simulation with {epochs} epochs and {step_size} step size")
+        for epoch in range(epochs):
+            reset_simulation(simulation_id)
+            ended = False
+            while not ended:
+                state = step_simulation(simulation_id, step_size)
+                step += step_size
+                self.total_steps += step_size
+                self.log_state_to_tensorboard(state, self.total_steps)
+                ended = state['is_ended']
+
+            self.log.print_epoch(epoch, epochs, step)
+            self.writer.add_scalar('SimulationMetrics/TotalSteps', step, epoch)
+            results.append(step)
+            step = 0
+        stop_simulation(simulation_id)
 
 
 class ConfigLogging:

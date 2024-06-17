@@ -18,7 +18,7 @@ class SumoSingleTLSExperiment(Experiment):
     class Action(Enum):
         STEP = 0
         NEXT_PHASE = 1
-        SWITCH_PROGRAM = 2
+        # SWITCH_PROGRAM = 2
 
     def __init__(self, session_id: str, tls_id: str, model: BaseModel,
                  reward_func: Callable[[dict, int], torch.Tensor] = None):
@@ -40,17 +40,9 @@ class SumoSingleTLSExperiment(Experiment):
     def get_selected_action_method(self, action) -> callable:
         if action == self.Action.STEP.value:
             ret = lambda: None
-        elif action == self.Action.NEXT_PHASE.value:
+        else:
             ret = lambda: set_traffic_light_next_phase(self.tls_id, self.session_id,
                                                        make_step=0)  # Set next phase
-        else:  # Switch Program
-            selected_program_index = action - self.Action.SWITCH_PROGRAM.value
-            if selected_program_index >= len(self.selected_program_ids):
-                raise RuntimeError("Illegal action")
-            selected_program = self.selected_program_ids[int(selected_program_index)]
-            ret = lambda: switch_traffic_light_program(tls_id=self.tls_id, session_id=self.session_id,
-                                                       program_id=selected_program,
-                                                       make_step=0, forced=True)
         return ret
 
     def extract_state_tensor(self, response):
