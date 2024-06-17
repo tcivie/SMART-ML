@@ -1,12 +1,6 @@
 import datetime
 import time
-from typing import List
-import matplotlib.pyplot as plt
-import xml.etree.ElementTree as ET
-import base64
-from io import BytesIO
-from typing import Callable, Type
-import time
+from ray import train
 from typing import Callable, Type
 from pathlib import Path
 
@@ -15,6 +9,8 @@ from matplotlib import pyplot as plt
 import xml.etree.ElementTree as ET
 from typing import List, Dict
 
+from ray.tune import Tuner
+from ray.util.client import ray
 from torch.utils.tensorboard import SummaryWriter
 
 from api_endpoints import start_simulation, reset_simulation, step_simulation, stop_simulation
@@ -173,6 +169,7 @@ class ConfigBase:
 
             self.log.print_epoch(epoch, epochs, step)
             self.writer.add_scalar('SimulationMetrics/TotalSteps', step, epoch)
+            train.report({"TotalSteps": step})
             results.append(step)
             step = 0
         stop_simulation(simulation_id)

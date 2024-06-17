@@ -1,3 +1,4 @@
+import json
 import uuid
 from enum import Enum
 from typing import Optional, Union, Any
@@ -38,6 +39,12 @@ class LightPhase(Enum):
     def __str__(self):
         return reverse_lights_definitions[self.value]
 
+    @classmethod
+    def from_char(cls, char):
+        if char in lights_definitions:
+            return cls(lights_definitions[char])
+        else:
+            raise ValueError(f"Character {char} is not a valid LightPhase")
 
 def initialize_vehicles_in_tls(tls_ids_list):
     """
@@ -113,15 +120,6 @@ class Simulation:
 
         return ret
 
-        # list_of_tls = self.conn.trafficlight.getIDList()
-        # tls_data = {}
-        # for tls in list_of_tls:
-        #     tls = self._get_specific_traffic_light(tls_id)
-        #     tls_data[tls] = {
-        #         'lanes': self.conn.trafficlight.getControlledLanes(tls),
-        #     }
-        #
-
     @property
     def port(self) -> int:
         return self._port
@@ -179,6 +177,22 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
+    def get_list_of_phases(self, tls_id: str) -> list[list[str]]:
+        """
+        Get the list of phases for a specific traffic light
+        :param tls_id: Traffic light system ID.
+        :return: List of LightPhase objects.
+        """
+        tls_data = self._get_specific_traffic_light(tls_id)
+        if tls_data is None:
+            return []
+
+        current_logic = self.conn.trafficlight.getProgram(tls_id)
+        for logic in tls_data['logics']:
+            if logic['program_id'] == current_logic:
+                return [phase['state'] for phase in logic['phases']]
+
+        return []
     def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1, *, forced=False) -> \
             Union[
                 bool, dict]:
@@ -295,8 +309,10 @@ class Simulation:
         """
         default_data = self.step_simulation(steps=0, tls_ids=tls_ids)
         default_data['num_controlled_links'] = {}
+        default_data['tls_phases'] = {}
         for tls_id in default_data['vehicles_in_tls'].keys():
             default_data['num_controlled_links'][tls_id] = len(self.conn.trafficlight.getControlledLinks(tls_id))
+            default_data['tls_phases'][tls_id] = self.get_list_of_phases(tls_id)
         return default_data
 
     def _get_tls_statistics(self, tls_ids):

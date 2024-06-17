@@ -1,9 +1,10 @@
 import multiprocessing
-import subprocess
-import sys
+import os.path
 import time
-from multiprocessing import freeze_support
+from pathlib import Path
 
+import ray
+from ray import train, tune
 from typing import Callable, Type
 
 import torch
@@ -23,16 +24,19 @@ from experiments.models.rewardModel import RewardModel
 from sumo_sim.Simulation import LightPhase
 
 
-def create_and_run_simulation(epochs: int,
-                              step_size: int,
+def create_and_run_simulation(config,
+                              comment: str,
+                              step_size,
                               model_class: Type[BaseModel],
                               experiment_class: Type[Experiment],
-                              model_params_func: Callable[[object, str], BaseModel.Params],
+                              model_params_func: Callable[[object, str, dict], BaseModel.Params],
                               simulation_run_path: str = 'bologna/acosta/run.sumocfg',
                               reward_func: Callable[[dict, int], torch.Tensor] = None,
                               is_gui=True,
-                              config_type: Type[ConfigBase] = ConfigBase
+                              config_type: Type[ConfigBase] = ConfigBase,
                               ):
+    epochs = config["epochs"]
+
     writer = SummaryWriter(
         comment=f'{model_class.__name__}-{experiment_class.__name__}-{model_params_func.__name__}-{reward_func.__name__}'
     )
@@ -45,13 +49,14 @@ def create_and_run_simulation(epochs: int,
     writer.add_text('step_size', str(step_size))
     writer.add_text('simulation_run_path', simulation_run_path)
     writer.add_text('is_gui', str(is_gui))
+    writer.add_text('comment', comment)
 
     sim = config_type(epochs,
                       step_size,
                       model_class,
                       experiment_class,
                       writer,
-                      model_params_func,
+                      lambda state, tls_id: model_params_func(state, tls_id, config),
                       simulation_run_path,
                       reward_func,
                       is_gui=is_gui)
@@ -63,571 +68,85 @@ def create_and_run_simulation(epochs: int,
 simulation_run_path = 'bologna/acosta/run.sumocfg'
 
 
-# def hidden_2(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                num_controlled_links * len(LightPhase), [64, 64])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                num_controlled_links * len(LightPhase), [64, 64])
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=1,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# #
-# #
-# def hidden_3(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                num_controlled_links * len(LightPhase), [64, 64, 64])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                num_controlled_links * len(LightPhase), [64, 64, 64])
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=1,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# #
-# #
-# def hidden_3_small(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                num_controlled_links * len(LightPhase), [7 * dim_size, dim_size, dim_size // 2])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                num_controlled_links * len(LightPhase), [7 * dim_size, dim_size, dim_size // 2])
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=1,
-#         TARGET_UPDATE=1_000
-#     )
-
-
-#
-#
-# def hidden_4(dim_size: int):
-#     policy_net = SimpleNetwork(7 * dim_size,
-#                                2, [64, 64, 64, 64])
-#     target_net = SimpleNetwork(7 * dim_size,
-#                                2, [64, 64, 64, 64])
-#     return DQN.Params(
-#         observations=7 * dim_size,
-#         actions=2,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#     )
-
-
-# @dataclass
-#     class Params(BaseModel.Params):
-#         observations: int = 7
-#         policy_net: nn.Module = SimpleNetwork(7, 3, [64, 64])
-#         target_net: nn.Module = SimpleNetwork(7, 3, [64, 64])
-#         optimizer: torch.optim.Optimizer = torch.optim.Adam
-#         memory: ReplayMemory = ReplayMemory(10000)
-#
-#         EPS_START: float = 0.9
-#         EPS_END: float = 0.05
-#         EPS_DECAY: float = 200
-#
-#         GAMMA: float = 0.999
-#         BATCH_SIZE: int = 128
-# def hidden_2x2(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase),
-#                               [[64, 32, 16], [32, 16]], 1)
-#     target_net = SplitNetwork(7 * dim_size, num_controlled_links * len(LightPhase),
-#                               [[64, 32, 16], [32, 16]], 1)
-#     return SplitDQN.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.1),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 32, 1, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 32, 1, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_small(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 64, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 64, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(200_000),
-#         EPS_START=0.8,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.95,
-#         BATCH_SIZE=64,
-#         TARGET_UPDATE=500
-#     )
-#
-#
-# def lstm_net_medium(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 128, 3, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 128, 3, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(500_000),
-#         EPS_START=0.7,
-#         EPS_END=0.05,
-#         EPS_DECAY=500,
-#         GAMMA=0.99,
-#         BATCH_SIZE=128,
-#         TARGET_UPDATE=500
-#     )
-#
-#
-# def lstm_net_large(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 256, 4, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 256, 4, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.0005),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(1_000_000),
-#         EPS_START=0.6,
-#         EPS_END=0.05,
-#         EPS_DECAY=500,
-#         GAMMA=0.99,
-#         BATCH_SIZE=256,
-#         TARGET_UPDATE=200
-#     )
-#
-#
-# ###
-#
-# def lstm_net_tiny_v1(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 8, 1, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 8, 1, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.0005),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(50_000),
-#         EPS_START=0.85,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny_v2(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 32, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 32, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.9,
-#         EPS_END=0.1,
-#         EPS_DECAY=2_000,
-#         GAMMA=0.95,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny_v3(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(100_000),
-#         EPS_START=0.8,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_000,
-#         GAMMA=0.9,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny_v4(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 16, 1, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(200_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=1_500,
-#         GAMMA=0.9,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# ###
-#
-# def lstm_net_tiny_v5(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 64, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 64, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(200_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=4_000,
-#         GAMMA=0.97,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny_v6(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 32, 3, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 32, 3, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(200_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=5_000,
-#         GAMMA=0.98,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny_v7(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 64, 3, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 64, 3, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(300_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=3_000,
-#         GAMMA=0.99,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-#
-# def lstm_net_tiny_v8(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 128, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 128, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(400_000),
-#         EPS_START=0.9,
-#         EPS_END=0.05,
-#         EPS_DECAY=6_000,
-#         GAMMA=0.98,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-# ###
-#
-# def lstm_net_tiny_v9(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 48, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 48, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(1_000),
-#         EPS_START=0.85,
-#         EPS_END=0.05,
-#         EPS_DECAY=3_000,
-#         GAMMA=0.97,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-# def lstm_net_tiny_v10(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, dim_size, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, dim_size, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.0007),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(1_000),
-#         EPS_START=0.8,
-#         EPS_END=0.05,
-#         EPS_DECAY=4_000,
-#         GAMMA=0.98,
-#         BATCH_SIZE=64,
-#         TARGET_UPDATE=1_000
-#     )
-#
-# def lstm_net_tiny_v11(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 64, 1, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 64, 1, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.002),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(1_000),
-#         EPS_START=0.85,
-#         EPS_END=0.05,
-#         EPS_DECAY=2_000,
-#         GAMMA=0.96,
-#         BATCH_SIZE=32,
-#         TARGET_UPDATE=1_000
-#     )
-#
-# def lstm_net_tiny_v12(state, tls_id: str):
-#     dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
-#     num_controlled_links = state['num_controlled_links'][tls_id]
-#     policy_net = LSTMNetwork(7 * dim_size, 128, 2, num_controlled_links * len(LightPhase))
-#     target_net = LSTMNetwork(7 * dim_size, 128, 2, num_controlled_links * len(LightPhase))
-#     return DQNWithPhases.Params(
-#         observations=7 * dim_size,
-#         policy_net=policy_net,
-#         target_net=target_net,
-#         optimizer=torch.optim.Adam(policy_net.parameters(), lr=0.001),
-#         num_of_controlled_links=num_controlled_links,
-#
-#         memory=ReplayMemory(1_000),
-#         EPS_START=0.8,
-#         EPS_END=0.05,
-#         EPS_DECAY=3_000,
-#         GAMMA=0.99,
-#         BATCH_SIZE=64,
-#         TARGET_UPDATE=500
-#     )
-
 def empty_reward_func(state, tls_id: str):
     return DQN.Params()
 
 
-if __name__ == '__main__':
-    # if 'darwin' in sys.platform:
-    #     print('Running \'caffeinate\' on MacOSX to prevent the system from sleeping')
-    # subprocess.Popen('caffeinate')
-    # List of arguments to pass to the function
+def simple_network(state, tls_id: str, config):
+    dim_size = len(state['vehicles_in_tls'][tls_id]['lanes'])
+    num_controlled_links = state['num_controlled_links'][tls_id]
+    states = state['tls_phases'][tls_id]
 
-    # epochs: int,
-    # step_size: int,
-    # model_class: Type[BaseModel],
-    # experiment_class: Type[Experiment],
-    # model_params_func: Callable[[object, str], BaseModel.Params],
-    # simulation_run_path: str = 'bologna/acosta/run.sumocfg',
-    # reward_func: Callable[[dict, int], torch.Tensor] = None,
-    # is_gui=True,
-    # config_type: Type[ConfigBase] = ConfigBase
+    network_input = 7 * dim_size + len(states)
+    network_output = 2  # Actions ( Do nothing of change phase )
 
-    noModelSimulation = (
-        20,
-        10,
-        DQN,
-        SumoSingleTLSExperiment,
-        empty_reward_func,
-        simulation_run_path,
-        RewardModel,
-        False,
-        NoModelConfig
+    hidden_layers = [config["layer1_size"], config["layer2_size"], config["layer3_size"]][:config["num_layers"]]
+
+    policy_net = SimpleNetwork(network_input,
+                               network_output, hidden_layers)
+    target_net = SimpleNetwork(network_input,
+                               network_output, hidden_layers)
+
+    return DQN.Params(
+        observations=network_input,
+        policy_net=policy_net,
+        target_net=target_net,
+
+        optimizer=torch.optim.Adam(policy_net.parameters(), lr=config["lr"]),
+        memory=ReplayMemory(config["memory_size"]),
+
+        EPS_START=config["eps_start"],
+        EPS_END=config["eps_end"],
+        EPS_DECAY=config["eps_decay"],
+        GAMMA=config["gamma"],
+        BATCH_SIZE=config["batch_size"],
+        TARGET_UPDATE=config["target_update"],
     )
-    # args1 = (
-    #     20,
-    #     10,
-    #     DQN,
-    #     SumoSingleTLSExperiment,
-    #     lstm_net_tiny_v9,
-    #     simulation_run_path,
-    #     RewardModel
-    # )
-    # args2 = (
-    #     20,
-    #     10,
-    #     LSTMDQNWithPhases,
-    #     SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-    #     lstm_net_tiny_v10,
-    #     simulation_run_path,
-    #     RewardModel
-    # )
-    # args3 = (
-    #     20,
-    #     10,
-    #     LSTMDQNWithPhases,
-    #     SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-    #     lstm_net_tiny_v11,
-    #     simulation_run_path,
-    #     RewardModel
-    # )
-    # args4 = (
-    #     20,
-    #     10,
-    #     LSTMDQNWithPhases,
-    #     SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward,
-    #     lstm_net_tiny_v12,
-    #     simulation_run_path,
-    #     RewardModel
-    # )
 
-    # arguments = [args1, args2, args3, args4]
-    arguments = [noModelSimulation]
-    # Create a list to hold the processes
-    processes = []
 
-    # Start a process for each argument
-    for arg in arguments:
-        p = multiprocessing.Process(target=create_and_run_simulation, args=arg)
-        processes.append(p)
-        p.start()
-        time.sleep(2)
+if __name__ == '__main__':
+    logs_path = Path(__file__).parent / 'runs'
+    param_space = {
+        "epochs": tune.randint(10, 30),
+        "lr": tune.loguniform(1e-4, 1e-2),
+        "batch_size": tune.choice([32, 64, 128]),
+        "gamma": tune.uniform(0.8, 0.99),
+        "layer1_size": tune.choice([16, 32, 64]),
+        "layer2_size": tune.choice([16, 32, 64]),
+        "layer3_size": tune.choice([16, 32, 64]),
+        "num_layers": tune.choice([1, 2, 3]),
+        "memory_size": tune.choice([500, 1000, 2000]),
+        "eps_start": tune.uniform(0.8, 1.0),
+        "eps_end": tune.uniform(0.01, 0.1),
+        "eps_decay": tune.randint(500, 2000),
+        "target_update": tune.randint(500, 2000)
+    }
 
-    # Wait for all processes to finish
-    for p in processes:
-        p.join()
+    comment = """Simple model, where the TLS schedule is controlled by the model and the schedule (If the model wants it can 
+    trigger the schedule change) and if not it would be triggered like in the normal simulation. essentially it 
+    can only make the TLS change state earlier"""
 
-    print("All subprocesses are done.")
+    tuner = tune.Tuner(
+        tune.with_parameters(create_and_run_simulation,
+                             comment=comment,
+                             step_size=10,
+                             model_class=DQN,
+                             experiment_class=SumoSingleTLSExperiment,
+                             model_params_func=simple_network,
+                             simulation_run_path=simulation_run_path,
+                             reward_func=RewardModel,
+                             is_gui=False,
+                             config_type=ConfigBase),
+        param_space=param_space,
+        tune_config=tune.TuneConfig(
+            metric="TotalSteps",
+            mode="min",
+            num_samples=3,
+        ),
+        run_config=train.RunConfig(
+            name="hyperparameter_tuning",
+            storage_path=str(logs_path),
+        )
+    )
+    tuner.fit()
+    print("Hyperparameter tuning is complete.")

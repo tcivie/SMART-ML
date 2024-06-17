@@ -8,19 +8,16 @@ class RewardModel:
     def __init__(self, tls_data=None):
         if tls_data is not None:
             input_size = len(tls_data['lanes']) * 7  # Number of lanes times number of features per lane
-            hidden_size = 32
-            num_layers = 3
             output_size = 1
-            self.model = LSTMNetwork(input_size, hidden_size, num_layers, output_size)
+            self.model = SimpleNetwork(input_size, output_size, [32, 64, 32])
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
             self.criterion = nn.MSELoss()
-            self.h0 = torch.zeros(num_layers, 1, hidden_size).to('cpu')  # Assuming 'cpu', change if needed
-            self.c0 = torch.zeros(num_layers, 1, hidden_size).to('cpu')
         self.last_speed = None
 
-    def __call__(self, metrics, cars_that_left):
+    def __call__(self, metrics, delta_cars):
         total_speed = sum([x.get('average_speed', 0) * 3.6 for x in metrics.values()])  # Convert m/s to km/h
-        average_speed = torch.tensor(total_speed / len(metrics) if len(metrics) > 0 else 0, dtype=torch.float32 , requires_grad=True)
+        average_speed = torch.tensor(total_speed / len(metrics) if len(metrics) > 0 else 0, dtype=torch.float32,
+                                     requires_grad=True)
         total_cars = sum([x.get('total_cars', 0) for x in metrics.values()])
 
         if total_cars == 0:
@@ -34,7 +31,7 @@ class RewardModel:
 
         state_tensor = self.extract_state_tensor(metrics).unsqueeze(0)
 
-        reward, (self.h0, self.c0) = self.model(state_tensor, self.h0, self.c0)
+        reward = self.model(state_tensor)
 
         loss = self.criterion(average_speed, self.last_speed + speed_trend)
         self.optimizer.zero_grad()

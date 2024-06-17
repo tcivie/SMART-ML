@@ -62,12 +62,12 @@ class DQN(BaseModel):
         if sample > eps_threshold:
             with torch.inference_mode():
                 action = self.policy_net(current_state.float()).max(0).indices.item()
-                self.memory.push(action, current_state, reward)
+                self.memory.push([[action]], current_state.float().unsqueeze(0), reward)
                 return action
         else:
             # Randomly select an action and return as integer
             action = random.randrange(self.actions)
-            self.memory.push(action, current_state, reward)
+            self.memory.push([[action]], current_state.float().unsqueeze(0), reward)
             return action
 
     def optimize_model(self):
@@ -90,14 +90,15 @@ class DQN(BaseModel):
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None])
         state_batch = torch.cat(batch.state)
-        flattened_actions = [item.value for sublist in batch.action for item in sublist]
-        action_batch = torch.tensor(flattened_actions, dtype=torch.int64)
-        reward_batch = torch.tensor(batch.reward, dtype=torch.float32)
+        flattened_actions = [item for sublist in batch.action for item in sublist]
+        action_batch = torch.tensor(flattened_actions, dtype=torch.int64, device=device)
+        reward_batch = torch.tensor(batch.reward, dtype=torch.float32, device=device)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to policy_net
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+        policy_net_result = self.policy_net(state_batch)
+        state_action_values = policy_net_result.gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based

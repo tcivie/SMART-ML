@@ -34,16 +34,22 @@ class SimpleNetwork(nn.Module):
     @staticmethod
     def generate_layers(action_size, hidden_sizes, state_size):
         layers = []
+
         # Input layer
         layers.append(nn.Linear(state_size, hidden_sizes[0]))
+        layers.append(nn.ReLU())
+
         # Hidden layers
         for i in range(1, len(hidden_sizes)):
             layers.append(nn.Linear(hidden_sizes[i - 1], hidden_sizes[i]))
+            layers.append(nn.ReLU())
+
         # Output layer
         layers.append(nn.Linear(hidden_sizes[-1], action_size))
         layers.append(nn.ReLU())
+
         if action_size > 1:
-            layers.append(nn.Softmax(dim=0))
+            layers.append(nn.Softmax(dim=0))  # Softmax along the correct dimension for batch processing
         return nn.Sequential(*layers)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
@@ -51,7 +57,6 @@ class SimpleNetwork(nn.Module):
             state = layer(state)
             if self.intermediate_layer_index is not None and index == self.intermediate_layer_index:
                 self.intermediate_layer_results = state
-            # state = F.relu(state)
         return self.layers[-1](state)
 
 
