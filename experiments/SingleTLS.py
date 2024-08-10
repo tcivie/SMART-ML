@@ -11,7 +11,7 @@ from experiments import device
 from experiments.experiments_base import Experiment
 from experiments.models.models_base import BaseModel
 from experiments.models.rewardModel import RewardModel
-from sumo_sim.Simulation import LightPhase
+from sumo_sim.Simulation import LightPhase, lights_definitions
 
 
 class SumoSingleTLSExperiment(Experiment):
@@ -69,7 +69,7 @@ class SumoSingleTLSExperiment(Experiment):
 
         # Create tensor for the current phase index
         phase_tensor = torch.zeros(self.number_of_phases, dtype=torch.float32, device=device)
-        phase_tensor[self.current_phase_index] = 1.0
+        phase_tensor[response['vehicles_in_tls'][self.tls_id]['current_phase_index']] = 1.0
 
         # Concatenate phase tensor with state tensor
         state = torch.tensor(extracted_data, dtype=torch.float32, device=device)
@@ -101,7 +101,7 @@ class SumoSingleTLSExperiment(Experiment):
     def step(self, environment_state) -> callable:
         state_tensor, reward, is_ended = self.extract_state_tensor(environment_state)
         selected_action = self.model.select_action(state_tensor, reward)
-        self.model.optimize_model()
+        loss = self.model.optimize_model()
         if is_ended:
             return None
         return self.get_selected_action_method(selected_action)
@@ -140,6 +140,22 @@ class SumoSingleTLSExperimentUncontrolledPhase(SumoSingleTLSExperiment):
         return ret
 
 
+class SumoSingleTLSExperimentControlledTotalPhases(SumoSingleTLSExperimentUncontrolledPhase):
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel,
+                 reward_func: Callable[[dict, int], torch.Tensor] = None):
+        super().__init__(session_id, tls_id, model, reward_func)
+        states = set()
+        for program in self.tls_data['programs']:
+            for phase in program['phases']:
+                states.add(tuple(LightPhase(lights_definitions[phase_id]) for phase_id in phase['state']))
+        self.states: list = list(states)
+
+    @overrides
+    def get_selected_action_method(self, action) -> callable:
+        assert isinstance(action, int), "Invalid Action, should have been int"
+        return lambda: set_traffic_light_phase(self.tls_id, self.session_id, self.states[action])
+
+
 class SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward(SumoSingleTLSExperimentUncontrolledPhase):
 
     def __init__(self, session_id: str, tls_id: str, model: BaseModel,
@@ -147,3 +163,46 @@ class SumoSingleTLSExperimentUncontrolledPhaseWithMasterReward(SumoSingleTLSExpe
         super().__init__(session_id, tls_id, model, reward_func)
         if reward_func is not None:
             self.reward_func = reward_func(self.tls_data)
+
+
+class SumoSingleTLSExperimentAllStates(SumoSingleTLSExperiment):
+    def __init__(self, session_id: str, tls_id: str, model: BaseModel,
+                 reward_func=None):
+        super().__init__(session_id, tls_id, model, reward_func)
+
+    def extract_state_tensor(self, response):
+        self.current_step_count += 1
+        is_ended = response['is_ended']
+        metrics = response['vehicles_in_tls'][self.tls_id]['longest_waiting_time_car_in_lane']
+        delta_cars = response['delta_cars_in_tls']
+        extracted_data = []
+        for lane in metrics:
+            values = list(metrics[lane].values())
+            if values:
+                extracted_data.extend([float(x) for x in metrics[lane].values()])
+            else:
+                extracted_data.extend([0. for _ in range(7)])
+
+        # Concatenate phase tensor with state tensor
+        state = torch.tensor(extracted_data, dtype=torch.float32, device=device)
+        state = torch.cat((state,
+                           torch.tensor(self.__get_other_tls_state(response), dtype=torch.float32, device=device)))
+
+        reward = self.reward_func(metrics, delta_cars)
+        if is_ended:
+            if self.current_step_count < self.best_steps_count:
+                self.best_steps_count = self.current_step_count
+                reward += 10  # Bonus for improving the best time
+            self.current_step_count = 0  # Reset start time for the next run
+        return state, reward, is_ended
+
+    @staticmethod
+    def __get_other_tls_state(response):
+        ret = []
+        data = response['vehicles_in_tls']
+        for tls_id in data:
+            tls = data[tls_id]
+            add = [0. for _ in range(tls['total_phases_count'])]
+            add[data[tls_id]['current_phase_index']] = 1.
+            ret.extend(add)
+        return ret

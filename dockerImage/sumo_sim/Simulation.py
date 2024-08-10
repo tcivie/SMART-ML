@@ -1,9 +1,7 @@
-import json
 import uuid
 from enum import Enum
 from typing import Optional, Union, Any
 
-import torch
 import traci
 
 from sumo_sim.utils import find_available_port, calculate_all_possible_transitions
@@ -39,12 +37,6 @@ class LightPhase(Enum):
     def __str__(self):
         return reverse_lights_definitions[self.value]
 
-    @classmethod
-    def from_char(cls, char):
-        if char in lights_definitions:
-            return cls(lights_definitions[char])
-        else:
-            raise ValueError(f"Character {char} is not a valid LightPhase")
 
 def initialize_vehicles_in_tls(tls_ids_list):
     """
@@ -65,7 +57,6 @@ def initialize_vehicles_in_tls(tls_ids_list):
 class Simulation:
 
     def __init__(self, config_path: str, port: int = None, session_id: str = None, is_gui: bool = False):
-        self.total_cars_in_simulation = 0
         self.vehicles_in_tls = None
         self._conn = None
         self._traffic_lights_cache = None
@@ -99,6 +90,7 @@ class Simulation:
         :return:
         """
         tls_ids = self._get_tls_ids_list()
+        tls_ids.sort()
         ret = {"tls": {}, "params_count": 7}
         ret_tls = ret['tls']
         for tls in tls_ids:
@@ -116,9 +108,19 @@ class Simulation:
                         'state': phase.state
                     } for phase in logic.phases]
                 })
-            ret_tls[tls] = {'lanes': lanes, 'programs': logics}
+            ret_tls[tls] = {'lanes': lanes, 'programs': logics,
+                            'current_program': self.conn.trafficlight.getProgram(tls)}
 
         return ret
+
+        # list_of_tls = self.conn.trafficlight.getIDList()
+        # tls_data = {}
+        # for tls in list_of_tls:
+        #     tls = self._get_specific_traffic_light(tls_id)
+        #     tls_data[tls] = {
+        #         'lanes': self.conn.trafficlight.getControlledLanes(tls),
+        #     }
+        #
 
     @property
     def port(self) -> int:
@@ -139,7 +141,6 @@ class Simulation:
         self.conn.load(['-c', self._config_path])
         self._traffic_lights_cache = None
         self.vehicles_in_tls = None
-        self.total_cars_in_simulation = 0
 
     def get_traffic_lights_data(self) -> list[dict]:
         """
@@ -177,22 +178,6 @@ class Simulation:
         self._traffic_lights_cache = returned_traffic_lights
         return returned_traffic_lights
 
-    def get_list_of_phases(self, tls_id: str) -> list[list[str]]:
-        """
-        Get the list of phases for a specific traffic light
-        :param tls_id: Traffic light system ID.
-        :return: List of LightPhase objects.
-        """
-        tls_data = self._get_specific_traffic_light(tls_id)
-        if tls_data is None:
-            return []
-
-        current_logic = self.conn.trafficlight.getProgram(tls_id)
-        for logic in tls_data['logics']:
-            if logic['program_id'] == current_logic:
-                return [phase['state'] for phase in logic['phases']]
-
-        return []
     def switch_traffic_light_program(self, tls_id: str, new_program_id: str, make_step: int = 1, *, forced=False) -> \
             Union[
                 bool, dict]:
@@ -276,9 +261,13 @@ class Simulation:
         if isinstance(tls_id_unpacked, str):  # Single TLS ID provided
             return [tls_id_unpacked]
         elif isinstance(tls_id_unpacked, list):  # List of TLS IDs provided
-            return tls_id_unpacked
+            ret = tls_id_unpacked
+            ret.sort()
+            return ret
         else:  # No specific TLS IDs provided; use all TLS IDs
-            return self.conn.trafficlight.getIDList()
+            ret = list(self.conn.trafficlight.getIDList())
+            ret.sort()
+            return ret
 
     def step_simulation(self, steps: int = 1, tls_ids=None) -> Optional[
         dict[str, Union[int, dict[Any, dict[str, Union[dict[Any, Any], int]]]]]]:
@@ -288,16 +277,12 @@ class Simulation:
         for _ in range(steps):
             self.conn.simulationStep()
 
-        vehicles_in_tls = self._get_tls_statistics(tls_ids)
-
-        new_total_cars_in_simulation = self.conn.vehicle.getIDCount()
-        delta_cars_in_tls = new_total_cars_in_simulation - self.total_cars_in_simulation
-        self.total_cars_in_simulation = new_total_cars_in_simulation
+        vehicles_in_tls, delta_cars_in_tls, cars_that_left = self._get_tls_statistics(tls_ids)
 
         return {
             'vehicles_in_tls': vehicles_in_tls,
             'delta_cars_in_tls': delta_cars_in_tls,
-            'total_cars_in_simulation': self.total_cars_in_simulation,
+            'cars_that_left': cars_that_left,
             'is_ended': self.conn.simulation.getMinExpectedNumber() == 0
         }
 
@@ -309,10 +294,8 @@ class Simulation:
         """
         default_data = self.step_simulation(steps=0, tls_ids=tls_ids)
         default_data['num_controlled_links'] = {}
-        default_data['tls_phases'] = {}
         for tls_id in default_data['vehicles_in_tls'].keys():
             default_data['num_controlled_links'][tls_id] = len(self.conn.trafficlight.getControlledLinks(tls_id))
-            default_data['tls_phases'][tls_id] = self.get_list_of_phases(tls_id)
         return default_data
 
     def _get_tls_statistics(self, tls_ids):
@@ -329,8 +312,14 @@ class Simulation:
         tls_ids_list = self._get_tls_ids_list(tls_ids)
         self.vehicles_in_tls = initialize_vehicles_in_tls(tls_ids_list)
         for tls_id in tls_ids_list:
+            self.vehicles_in_tls[tls_id]['current_phase_index'] = self.conn.trafficlight.getPhase(tls_id)
+            program_id = self.conn.trafficlight.getProgram(tls_id)
+            programs = self.conn.trafficlight.getAllProgramLogics(tls_id)
+            for program in programs:
+                if program.programID == program_id:
+                    self.vehicles_in_tls[tls_id]['total_phases_count'] = len(program.phases)
+                    break
             controlled_lanes = self.conn.trafficlight.getControlledLanes(tls_id)
-            self.vehicles_in_tls[tls_id]['current_tls_state_id'] = self.conn.trafficlight.getPhase(tls_id)
             for lane in controlled_lanes:
                 lane_vehicle_ids = self.conn.lane.getLastStepVehicleIDs(lane)
                 self.vehicles_in_tls[tls_id]['lanes'][lane] = lane_vehicle_ids
@@ -339,7 +328,16 @@ class Simulation:
                 metrics_per_lane = self._calculate_lane_metrics(lane, lane_vehicle_ids)
                 self.vehicles_in_tls[tls_id]['longest_waiting_time_car_in_lane'][lane] = metrics_per_lane
 
-        return self.vehicles_in_tls
+        # Calculate the delta
+        current_vehicles_in_tls = 0
+        cars_after_step = set()
+        for tls_id in self.vehicles_in_tls:
+            current_vehicles_in_tls += self.vehicles_in_tls[tls_id]['total']
+            for lane in self.vehicles_in_tls[tls_id]['lanes']:
+                cars_after_step.update(self.vehicles_in_tls[tls_id]['lanes'][lane])
+        delta_cars_in_tls = current_vehicles_in_tls - last_vehicles_in_tls
+        cars_that_left = len(cars_before_step - cars_after_step)
+        return self.vehicles_in_tls, delta_cars_in_tls, cars_that_left
 
     def _calculate_lane_metrics(self, lane, vehicle_ids):
         metrics = {}
@@ -385,6 +383,7 @@ class Simulation:
                 if logic.programID != used_program_id:
                     continue
                 tls_data['logics'] = [{'state': phase.state, 'duration': phase.duration} for phase in logic.phases]
+
                 break
             tls_data['current_phase_index'] = self.conn.trafficlight.getPhase(t_id)
             vehicle_data = data['vehicle_data']

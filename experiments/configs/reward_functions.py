@@ -3,6 +3,20 @@ import torch
 from experiments import device
 
 
+def normalized_general_reward_func(states: dict, cars_that_left: int) -> torch.Tensor:
+    reward = cars_that_left
+    for lane in states.values():
+        if not lane:
+            continue
+        max_wait_time = lane.get('max_wait_time', 0.)
+        if max_wait_time > 0:
+            reward -= max_wait_time * (lane['queue_length']) / len(states)
+        else:
+            reward += lane['average_speed'] * 3.6 / len(states)  # Slightly higher reward for speed
+    reward = max(min(reward, abs(cars_that_left)), -abs(cars_that_left))
+    return torch.tensor(reward, dtype=torch.float32, device=device)
+
+
 def penalize_long_wait_times(states: dict, cars_that_left: int) -> torch.Tensor:
     reward = cars_that_left * 5  # Moderate base reward for cars that left
     for lane in states.values():
