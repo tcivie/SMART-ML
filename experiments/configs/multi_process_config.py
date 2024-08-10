@@ -144,7 +144,7 @@ if __name__ == '__main__':
         "layer1_size": tune.choice([16, 32, 64]),
         "layer2_size": tune.choice([16, 32, 64]),
         "layer3_size": tune.choice([16, 32, 64]),
-        "num_layers": tune.choice([1, 2, 3]),
+        "num_layers": tune.choice([2, 3, 4, 5]),
         "memory_size": tune.choice([500, 1000, 2000]),
         "eps_start": tune.uniform(0.5, 1.0),
         "eps_end": tune.uniform(0.01, 0.1),
