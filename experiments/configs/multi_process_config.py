@@ -1,5 +1,8 @@
 import multiprocessing
 import os.path
+import random
+import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -50,7 +53,7 @@ def create_and_run_simulation(config,
     writer.add_text('simulation_run_path', simulation_run_path)
     writer.add_text('is_gui', str(is_gui))
     writer.add_text('comment', comment)
-
+    time.sleep(random.randint(100, 1000)/100)
     sim = config_type(epochs,
                       step_size,
                       model_class,
@@ -105,6 +108,10 @@ def simple_network(state, tls_id: str, config):
 
 
 if __name__ == '__main__':
+    if 'darwin' in sys.platform:
+        print('Running \'caffeinate\' on MacOSX to prevent the system from sleeping')
+    subprocess.Popen('caffeinate')
+    
     logs_path = Path(__file__).parent / 'runs'
     param_space = {
         "epochs": tune.randint(10, 30),
@@ -141,7 +148,7 @@ if __name__ == '__main__':
         tune_config=tune.TuneConfig(
             metric="TotalSteps",
             mode="min",
-            num_samples=3,
+            num_samples=8,
         ),
         run_config=train.RunConfig(
             name="hyperparameter_tuning",

@@ -3,7 +3,6 @@ import uuid
 from enum import Enum
 from typing import Optional, Union, Any
 
-import torch
 import traci
 
 from sumo_sim.utils import find_available_port, calculate_all_possible_transitions

@@ -1,7 +1,7 @@
 import torch
-import nest_asyncio
-
-nest_asyncio.apply()
+# import nest_asyncio
+# 
+# nest_asyncio.apply()
 
 # Determine the best available device for PyTorch operations (Device Agnostic Code)
 if torch.cuda.is_available():
